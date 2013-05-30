@@ -22,7 +22,8 @@ The standalone way
 
 The configuration file is in YAML syntax. The following is an example of telnet mapping
 
-Tunnel Client side:
+Tunnel Client side
+
 ```yaml
 endpoint: client
 ws_url: wss://localhost:9000/
@@ -34,6 +35,7 @@ proxies:
 ```
 
 Tunnel Server side
+
 ```yaml
 endpoint: server
 listen: 9000
