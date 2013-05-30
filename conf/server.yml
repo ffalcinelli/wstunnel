@@ -1,0 +1,72 @@
+# The WebSocket server endpoint will listen on
+# this host:port pair. If host is omitted then connections
+# will be accepted from any interface (both ipv4 and ipv6)
+endpoint: server
+listen: 9000
+# The SSL parameter enables/disables the criptography on channel.
+# When enabled, the ssl_options section is required
+ssl: false
+
+# These options should include at least the server certificate file.
+# If only this one is provided, the file must contain both the public
+# and the private keys
+ssl_options:
+  certfile: null
+  keyfile: null
+
+# This the resource/service mapping.
+# For each resource you can map a destination host:port
+# and a list of filters to be applied before sending data to the
+# service and before sending it back to the client.
+proxies:
+  /telnet:
+    address: 192.168.1.2:13131
+    filters: [wstunnel.filters.DumpFilter]
+
+  /ftp:
+    address: 192.168.1.2:21
+    filters: [wstunnel.filters.DumpFilter]
+
+  /ssh:
+    address: 192.168.1.2:22
+    filters: []
+
+# WSTunnel logging configuration
+logging:
+  version: 1
+  disable_existing_loggers: True
+  formatters:
+    simple:
+        format: "[%(asctime)s] %(name)s - %(levelname)-7s - %(message)s"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+      stream: ext://sys.stdout
+
+    file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: simple
+      filename: logs/wstunsrv.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 20
+      encoding: utf8
+
+  loggers:
+
+    wstunnel.server:
+      level: DEBUG
+      handlers: [console, file_handler]
+      propagate: no
+
+    tornado.general:
+      level: WARNING
+      handlers: [console, file_handler]
+      propagate: no
+
+  root:
+    level: INFO
+    handlers: [file_handler]

@@ -1,0 +1,56 @@
+# The WebSocket server endpoint url
+# use wss:// schema to connect in SSL mode
+endpoint: client
+ws_url: ws://localhost:9000/
+
+# This is the set of proxy services.
+# For each service you can specify
+# the port where to listen for connections
+# and the remote resource mapped to the service
+# Additionally you can provide a list of filters
+# to intercept data before being send to WebSocket
+# or before being sent back to client
+proxies:
+    /telnet:
+      port: 50023
+      filters: []
+    /ftp:
+      port: 50021
+      filters: []
+    /ssh:
+      port: 50022
+      filters: []
+
+# Logging configuration
+logging:
+  version: 1
+  disable_existing_loggers: False
+  formatters:
+      simple:
+          format: "[%(asctime)s] %(name)s - %(levelname)-7s - %(message)s"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+      stream: ext://sys.stdout
+
+    file_handler:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: simple
+      filename: logs/wstunclt.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 20
+      encoding: utf8
+
+  loggers:
+    wstunnel.client:
+      level: DEBUG
+      handlers: [console, file_handler]
+      propagate: yes
+
+  root:
+    level: INFO
+    handlers: [file_handler]
