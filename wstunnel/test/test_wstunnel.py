@@ -25,7 +25,7 @@ from wstunnel.toolbox import hex_dump, random_free_port
 
 __author__ = 'fabio'
 
-ASYNC_TIMEOUT = 1
+ASYNC_TIMEOUT = 2
 
 
 class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
@@ -64,7 +64,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def setUp(self):
         super(WSTunnelTestCase, self).setUp()
-        self.srv = EchoServer(0)
+        self.srv = EchoServer(port=0, address="localhost")
         self.srv.start(1)
         self.srv_tun = WSTunnelServer(port=0, proxies={"/test": self.srv.address_list[0]}, io_loop=self.io_loop)
 
