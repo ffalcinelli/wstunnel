@@ -111,9 +111,10 @@ def main(options):
         srv = create_ws_client_endpoint(wstun_conf)
     else:
         srv = create_ws_server_endpoint(wstun_conf)
+
+    for logger_name in wstun_conf["logging"]["loggers"].keys():
+        logging.getLogger(logger_name).disabled = False
     srv.start()
-    for log in (gen_log, app_log, access_log, logging.getLogger("wstunnel.server")):
-        log.disabled = False
 
 
 if __name__ == "__main__":

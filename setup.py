@@ -36,6 +36,6 @@ setup(name='wstunnel',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Utilities',
       ],
-      # setup_requires=[''],
-      # test_suite='nose.collector',
+      setup_requires=['nose'],
+      test_suite='nose.collector',
 )

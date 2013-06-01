@@ -13,16 +13,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
 import socket
 from tempfile import NamedTemporaryFile
 import os
 from tornado.testing import AsyncTestCase, LogTrapTestCase
-from client import WebSocketProxy
-from test import EchoServer, EchoClient
-from wstunnel.client import WSTunnelClient
-
 from wstunnel.filters import DumpFilter
+from wstunnel.test import EchoServer, EchoClient
+from wstunnel.client import WSTunnelClient, WebSocketProxy
 from wstunnel.server import WSTunnelServer
 from wstunnel.toolbox import hex_dump, random_free_port
 
@@ -82,7 +79,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.client = EchoClient(self.clt_tun.address_list[0])
 
     def on_response_received(self, response):
-        self.assertEqual(self.message.upper(), response)
+        self.assertEqual(self.message.upper(), response.decode("utf-8"))
         self.stop()
 
     def test_request_response(self):
@@ -105,7 +102,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
             content = logf.read()
             for line in hex_dump(self.message).splitlines():
-                self.assertIn(line, content)
+                self.assertIn(line, content.decode("utf-8"))
 
             self.clt_tun.uninstall_filter(client_filter)
 
@@ -122,7 +119,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
             content = logf.read()
             for line in hex_dump(self.message).splitlines():
-                self.assertIn(line, content)
+                self.assertIn(line, content.decode("utf-8"))
 
             self.srv_tun.uninstall_filter(server_filter)
 

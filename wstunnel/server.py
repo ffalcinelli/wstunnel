@@ -21,7 +21,6 @@ from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
-from decorators import enhance_log
 from wstunnel.filters import FilterException, DumpFilter
 from wstunnel.toolbox import random_free_port
 
@@ -35,7 +34,6 @@ class WebSocketProxyHandler(WebSocketHandler):
     Proxy a websocket connection to a service listening on a given (host, port) pair
     """
 
-    @enhance_log(logger)
     def initialize(self, **kwargs):
         self.remote_address = kwargs.get("address")
         self.io_stream = IOStream(socket.socket(kwargs.get("family", socket.AF_INET),
@@ -44,7 +42,6 @@ class WebSocketProxyHandler(WebSocketHandler):
         self.filters = kwargs.get("filters", [])
         self.io_stream.set_close_callback(self.handle_close)
 
-    @enhance_log(logger)
     def open(self):
         """
         Open the connection to the service when the WebSocket connection has been established
@@ -67,7 +64,6 @@ class WebSocketProxyHandler(WebSocketHandler):
             logger.exception(e)
             self.close()
 
-    @enhance_log(logger)
     def on_close(self):
         """
         When web socket gets closed, close the connection to the service too
@@ -76,7 +72,6 @@ class WebSocketProxyHandler(WebSocketHandler):
         if not self.io_stream._closed:
             self.io_stream.close()
 
-    @enhance_log(logger)
     def handle_connect(self):
         logger.debug("Connection established with peer at {0}:{1}".format(*self.remote_address))
         self.io_stream.read_until_close(self.handle_close, self.handle_reply)
@@ -95,7 +90,6 @@ class WebSocketProxyHandler(WebSocketHandler):
             logger.exception(e)
             self.close()
 
-    @enhance_log(logger)
     def handle_close(self, data=None):
         """
         Handles the close event of the service
@@ -135,12 +129,10 @@ class WSTunnelServer(object):
     def port(self, value):
         self._port = value if value else random_free_port()
 
-    @enhance_log(logger)
     def add_proxy(self, key, ws_proxy):
         logger.debug("Adding {0} as proxy for {1}".format(ws_proxy, key))
         self.proxies[key] = ws_proxy
 
-    @enhance_log(logger)
     def remove_proxy(self, key):
         logger.debug("Removing proxy on {1}".format(key))
         del self.proxies[key]
@@ -170,9 +162,7 @@ class WSTunnelServer(object):
     def handlers(self):
         return [(key, WebSocketProxyHandler, ws_proxy) for key, ws_proxy in self.proxies.items()]
 
-    @enhance_log(logger)
     def start(self, num_processes=1):
-        #logger.disabled = False
         logger.info("Starting {0} {1} processes".format(num_processes, self.__class__.__name__))
         self.app = Application(self.handlers, self.app_settings)
         self.server = HTTPServer(self.app, **self.tunnel_options)

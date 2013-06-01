@@ -16,8 +16,6 @@
 import copy
 
 import logging
-
-from logging import handlers
 from logging import config
 import yaml
 from wstunnel.toolbox import hex_dump

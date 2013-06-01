@@ -1,11 +1,14 @@
-Intro
-=====
+wstunnel
+========
 
-wstunnel is a WebSocket tunneling software written in python on top of tornado http://www.tornadoweb.org/ web framework for asynchronous I/O.
+A WebSocket tunneling software written in python on top of tornado http://www.tornadoweb.org/ web framework for asynchronous I/O.
 
+
+Quick start
+===========
 
 The standalone way
-==================
+------------------
 
 `wstunneld.py` is the script to start both sides of the tunnel
 
@@ -26,7 +29,7 @@ Tunnel Client side
 
 ```yaml
 endpoint: client
-ws_url: wss://localhost:9000/
+ws_url: ws://localhost:9000/
 
 proxies:
     /telnet:
@@ -46,11 +49,11 @@ ssl_options:
 
 proxies:
   /telnet:
-    address: 10.6.72.226:23
+    address: 192.168.1.2:23
     filters: [wstunnel.filters.DumpFilter]
 ```
 
-As a warm up you can edit the provided `conf/client.yml` and `server.yml` and run each side separately
+As a warm up you can edit the provided `conf/client.yml` and `conf/server.yml` and run each side separately
 
     $ ./wstunneld.py -c conf/client.yml
 
@@ -58,7 +61,7 @@ As a warm up you can edit the provided `conf/client.yml` and `server.yml` and ru
 
 
 The API way
-===========
+-----------
 
 You can use the tunneling endpoints in your code. Check the test suite for examples.
 
@@ -67,10 +70,10 @@ You can use the tunneling endpoints in your code. Check the test suite for examp
 By default, a `DumpFilter` class is provided to hex dump all network traffic.
 I'm planning to extend the plugin feature so this will change very soon.
 
-The development way
-===================
+The developer way
+-------------------
 
-If you want to get started and contribute, start by cloning the repo
+If you want to help me and contribute, start by cloning the repo
 
     $ git clone https://github.com/ffalcinelli/wstunnel wstunnel
 
@@ -91,6 +94,8 @@ License
 =======
 
 LGPLv3
+
+Copyright (c) 2013 Fabio Falcinelli <fabio.falcinelli@gmail.com>
 
 > This program is free software: you can redistribute it and/or modify
 > it under the terms of the GNU Lesser General Public License as published by

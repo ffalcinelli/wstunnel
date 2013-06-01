@@ -15,13 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import string
-from binascii import hexlify
-
 import os
+from binascii import hexlify
 
 __author__ = 'fabio'
 
 PORT_RANGE = (1025, 65535)
+
+printable = lambda x: x if x in string.printable[:-6] else '.'
+hex_value = lambda x: hexlify(x.encode("utf-8")).decode("utf-8")
 
 
 def address_to_tuple(addr):
@@ -60,15 +62,17 @@ def hex_dump(buff, size=16):
     Dump the buffer in wireshark style
     """
     out = []
+    half = int(size / 2)
+    if hasattr(buff, "decode"):
+        buff = buff.decode("utf-8")
     if buff:
-        char_conv = lambda x: c if c in string.printable[:-6] else '.'
         for i in range(0, len(buff), size):
-            hexed, plain = zip(*[(hexlify(c), char_conv(c)) for c in buff[i:i + size]])
+            hexed, plain = zip(*[(hex_value(c), printable(c)) for c in buff[i:i + size]])
             hexed = "{:04x}  {}  {}".format(i,
-                                            " ".join(hexed[:size / 2]),
-                                            " ".join(hexed[size / 2:size]))
-            plain = "{} {}".format("".join(plain[:size / 2]),
-                                   "".join(plain[size / 2:size]))
+                                            " ".join(hexed[:half]),
+                                            " ".join(hexed[half:size]))
+            plain = "{} {}".format("".join(plain[: half]),
+                                   "".join(plain[half:size]))
             out.append("{0}   {1:>{2}}".format(hexed,
                                                plain,
                                                55 - (len(hexed) - len(plain))))
@@ -104,3 +108,9 @@ def get_config(appname="wstunneld", filename="wstunneld.conf"):
             if os.path.exists(conf_file):
                 return conf_file
     return None
+
+
+def hex_and_printable(c):
+    h = hexlify(c.encode("utf-8"))
+    p = c if c in string.printable[:-6] else '.'
+    return h, p

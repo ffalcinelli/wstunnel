@@ -33,32 +33,3 @@ for scheme in (urlparse.uses_relative,
                urlparse.uses_query,
                urlparse.uses_fragment):
     scheme.extend(ws_scheme)
-
-
-def configure_logger(name="wstunneld", stdout=False, filename=None, level=logging.INFO, **kwargs):
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logfmt = logging.Formatter(kwargs.get("format",
-                                          "[%(asctime)s] %(name)s - %(levelname)s: %(message)s"))
-
-    if filename:
-        dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        h = handlers.RotatingFileHandler(filename,
-                                         maxBytes=kwargs.get("max_bytes", 10485760),
-                                         backupCount=kwargs.get("backup_count", 10))
-        h.setLevel(level)
-        h.setFormatter(logfmt)
-        logger.addHandler(h)
-
-    if stdout:
-        import sys
-
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(level)
-        h.setFormatter(logfmt)
-        logger.addHandler(h)
-
-    return logger

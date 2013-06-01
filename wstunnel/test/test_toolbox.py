@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import unittest
-from toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port
+from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port
 
 __author__ = 'fabio'
 
