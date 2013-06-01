@@ -64,7 +64,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def setUp(self):
         super(WSTunnelTestCase, self).setUp()
-        self.srv = EchoServer(port=0, address="localhost")
+        self.srv = EchoServer(port=0, address="127.0.0.1")
         self.srv.start(1)
         self.srv_tun = WSTunnelServer(port=0, proxies={"/test": self.srv.address_list[0]}, io_loop=self.io_loop)
 
@@ -141,7 +141,7 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
 
     def setUp(self):
         super(WSTunnelSSLTestCase, self).setUp()
-        self.srv = EchoServer(0)
+        self.srv = EchoServer(port=0, address="127.0.0.1")
         self.srv.start(1)
         self.srv_tun = WSTunnelServer(port=0,
                                       proxies={"/test": self.srv.address_list[0]},
