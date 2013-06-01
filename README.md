@@ -3,6 +3,7 @@ wstunnel
 
 A WebSocket tunneling software written in python on top of tornado http://www.tornadoweb.org/ web framework for asynchronous I/O.
 
+TravisCI status: [![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel)
 
 Quick start
 ===========
