@@ -21,11 +21,10 @@ import sys
 
 __author__ = 'fabio'
 
-PORT_RANGE = (1025, 65535)
-
 PY2 = sys.version_info[0] == 2
 if not PY2:
     unichr = chr
+
 
 def printable(x):
     if isinstance(x, bytes):
@@ -89,17 +88,16 @@ def hex_dump(buff, size=16):
     return "\n".join(out)
 
 
-def random_free_port(family=socket.AF_INET, type=socket.SOCK_STREAM, port_range=PORT_RANGE):
+def random_free_port(family=socket.AF_INET, type=socket.SOCK_STREAM):
     """
     Pick a free port in the given range
     """
     s = socket.socket(family, type)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        for p in range(*port_range):
-            if s.connect_ex(('127.0.0.1' if family == socket.AF_INET else '::1', p)) != 0:
-                return p
-        else:
-            raise Exception("No free ports in range {0}".format(port_range))
+        s.bind(("", 0))
+        port = s.getsockname()[1]
+        return port
     finally:
         s.close()
 

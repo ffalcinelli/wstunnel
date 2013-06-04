@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
+import sys
 from tempfile import NamedTemporaryFile
 import os
 from tornado.testing import AsyncTestCase, LogTrapTestCase
@@ -26,6 +27,9 @@ from wstunnel.toolbox import hex_dump, random_free_port
 __author__ = 'fabio'
 
 ASYNC_TIMEOUT = 2
+
+#TODO: on windows, temporary files are not working so well...
+DELETE_TMPFILE = not sys.platform.startswith("win")
 
 
 class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
@@ -64,22 +68,24 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def setUp(self):
         super(WSTunnelTestCase, self).setUp()
-        self.srv = EchoServer(port=0, address="127.0.0.1")
+        self.srv = EchoServer(port=0,
+                              address="127.0.0.1")
         self.srv.start(1)
-        self.srv_tun = WSTunnelServer(port=0, proxies={"/test": self.srv.address_list[0]}, io_loop=self.io_loop)
-
+        self.srv_tun = WSTunnelServer(port=0,
+                                      address=self.srv.address_list[0][0],
+                                      proxies={"/test": self.srv.address_list[0]}, io_loop=self.io_loop)
+        self.srv_tun.start()
         self.clt_tun = WSTunnelClient(proxies={0: "ws://localhost:{0}/test".format(self.srv_tun.port)},
+                                      address=self.srv_tun.address,
                                       family=socket.AF_INET,
                                       io_loop=self.io_loop)
+        self.clt_tun.start()
 
-        for srv in self.srv_tun, self.clt_tun:
-            srv.start()
-
-        self.message = "Hello World!"
+        self.message = "Hello World!".encode("utf-8")
         self.client = EchoClient(self.clt_tun.address_list[0])
 
     def on_response_received(self, response):
-        self.assertEqual(self.message.upper(), response.decode("utf-8"))
+        self.assertEqual(self.message.upper(), response)
         self.stop()
 
     def test_request_response(self):
@@ -89,11 +95,19 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.client.send_message(self.message, self.on_response_received)
         self.wait(timeout=ASYNC_TIMEOUT)
 
+    def test_request_response_binary(self):
+        """
+        Test a simple request/response chat through the websocket tunnel
+        """
+        self.message = bytes(b"\xff\xfd\x18\xff\xfd\x1f\xff\xfd#\xff\xfd'\xff\xfd$")
+        self.client.send_message(self.message, self.on_response_received)
+        self.wait(timeout=ASYNC_TIMEOUT)
+
     def test_client_dump_filter(self):
         """
         Test the installing of a dump filter into client proxies
         """
-        with NamedTemporaryFile() as logf:
+        with NamedTemporaryFile(delete=DELETE_TMPFILE) as logf:
             client_filter = DumpFilter(handler={"filename": logf.name})
             self.clt_tun.install_filter(client_filter)
 
@@ -110,7 +124,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         """
         Test the installing of a dump filter into client e server proxies
         """
-        with NamedTemporaryFile() as logf:
+        with NamedTemporaryFile(delete=DELETE_TMPFILE) as logf:
             server_filter = DumpFilter(handler={"filename": logf.name})
             self.srv_tun.install_filter(server_filter)
 
@@ -142,21 +156,21 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
     def setUp(self):
         super(WSTunnelSSLTestCase, self).setUp()
         self.srv = EchoServer(port=0, address="127.0.0.1")
-        self.srv.start(1)
+        self.srv.start()
         self.srv_tun = WSTunnelServer(port=0,
+                                      address=self.srv.address_list[0][0],
                                       proxies={"/test": self.srv.address_list[0]},
                                       io_loop=self.io_loop,
                                       ssl_options={
                                           "certfile": os.path.join(cert_dir, "localhost.pem"),
                                           "keyfile": os.path.join(cert_dir, "localhost.key"),
                                       })
-
+        self.srv_tun.start()
         self.clt_tun = WSTunnelClient(proxies={0: "wss://localhost:{0}/test".format(self.srv_tun.port)},
+                                      address=self.srv_tun.address,
                                       family=socket.AF_INET,
                                       io_loop=self.io_loop)
+        self.clt_tun.start()
 
-        for srv in self.srv_tun, self.clt_tun:
-            srv.start()
-
-        self.message = "Hello World!"
+        self.message = "Hello World!".encode("utf-8")
         self.client = EchoClient(self.clt_tun.address_list[0])
