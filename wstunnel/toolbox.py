@@ -17,13 +17,25 @@ import socket
 import string
 import os
 from binascii import hexlify
+import sys
 
 __author__ = 'fabio'
 
 PORT_RANGE = (1025, 65535)
 
-printable = lambda x: x if x in string.printable[:-6] else '.'
-hex_value = lambda x: hexlify(x.encode("utf-8")).decode("utf-8")
+PY2 = sys.version_info[0] == 2
+if not PY2:
+    unichr = chr
+
+def printable(x):
+    if isinstance(x, bytes):
+        return x if x in string.printable[:-6].encode("utf-8") else b'.'
+    elif isinstance(x, int):
+        return printable(unichr(x))
+    else:
+        return x if x in string.printable[:-6] else u'.'
+
+hex_value = lambda x: hex(x if isinstance(x, int) else ord(x))[2:]
 
 
 def address_to_tuple(addr):
@@ -63,8 +75,6 @@ def hex_dump(buff, size=16):
     """
     out = []
     half = int(size / 2)
-    if hasattr(buff, "decode"):
-        buff = buff.decode("utf-8")
     if buff:
         for i in range(0, len(buff), size):
             hexed, plain = zip(*[(hex_value(c), printable(c)) for c in buff[i:i + size]])

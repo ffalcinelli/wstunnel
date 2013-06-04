@@ -48,13 +48,22 @@ class ToolBoxTestCase(unittest.TestCase):
         self.assertEqual(t, (None, 443))
         self.assertEqual(addr, tuple_to_address(t))
 
-    def test_hex_dump(self):
+    def test_hex_dump_unicode(self):
         """
-        Tests the hex dump function
+        Tests the hex dump function with unicode strings
         """
         size = 16
-        data = "Hello World"
+        data = u"Hello World"
         result = "0000  48 65 6c 6c 6f 20 57 6f  72 6c 64                   Hello.Wo rld"
+        self.assertEqual(hex_dump(data, size), result)
+
+    def test_hex_dump_binary_data(self):
+        """
+        Tests the hex dump function passing binary data
+        """
+        size = 16
+        data = b"\xff\xfd\x18\xff\xfd\x1f\xff\xfd#\xff\xfd'\xff\xfd$"
+        result = "0000  ff fd 18 ff fd 1f ff fd  23 ff fd 27 ff fd 24       ........ #..'..$"
         self.assertEqual(hex_dump(data, size), result)
 
     def _test_random_free_port(self, address, family, type):
