@@ -18,11 +18,10 @@ import socket
 import ssl
 
 from tornado import escape, iostream
-from tornado.ioloop import IOLoop
 from tornado.tcpserver import TCPServer
 from ws4py.client import WebSocketBaseClient
 from ws4py.exc import HandshakeError
-from wstunnel.filters import FilterException, DumpFilter
+from wstunnel.filters import FilterException
 
 #The urlparse module is renamed to urllib.parse in Python 3.
 try:
@@ -139,6 +138,7 @@ class WebSocketProxy(TCPServer):
 
         self.ws_url = ws_url
         self.filters = kwargs.get("filters", [])
+        self.serving = False
 
     @property
     def address_list(self):
@@ -152,6 +152,14 @@ class WebSocketProxy(TCPServer):
         ws = WebSocketProxyConnection(self.ws_url, stream, address, filters=self.filters)
         logger.debug("Connecting to WebSocket endpoint at {}".format(self.ws_url))
         ws.connect()
+
+    def start(self, num_processes=1):
+        super(WebSocketProxy, self).start(num_processes)
+        self.serving = True
+
+    def stop(self):
+        super(WebSocketProxy, self).stop()
+        self.serving = False
 
 
 class WebSocketProxyConnection(TornadoWebSocketClient):
@@ -188,7 +196,8 @@ class WebSocketProxyConnection(TornadoWebSocketClient):
                 self.io_stream.write(data)
         except FilterException as e:
             logger.exception(e)
-            self.close()
+            #TODO: define better codes
+            self.close(code=2022, reason=e)
 
     def closed(self, code, reason=None):
         """
@@ -209,7 +218,8 @@ class WebSocketProxyConnection(TornadoWebSocketClient):
                 self.send(data, binary=True)
         except FilterException as e:
             logger.exception(e)
-            self.close()
+            #TODO: define better codes
+            self.close(code=2021, reason=e)
 
     def handle_close(self, data=None):
         """
@@ -236,9 +246,8 @@ class WSTunnelClient(object):
             "ssl_options": ssl_options,
         }
         self.proxies = {}
-        self._serving = False
+        self.serving = False
         self._num_proc = 1
-        logger = kwargs.get("logger", logging.getLogger(__name__))
         if proxies:
             for port, ws_url in proxies.items():
                 self.add_proxy(port, WebSocketProxy(port=port, ws_url=ws_url, **self.ws_options))
@@ -250,7 +259,7 @@ class WSTunnelClient(object):
         """
         logger.debug("Adding {0} as proxy for {1}".format(ws_proxy, key))
         self.proxies[key] = ws_proxy
-        if self._serving:
+        if self.serving:
             ws_proxy.start(self._num_proc)
 
     def remove_proxy(self, key):
@@ -258,10 +267,10 @@ class WSTunnelClient(object):
         Removes a proxy from the list.
         If the tunnel is serving connection, the proxy it gets stopped.
         """
-        logger.debug("Removing proxy on {1}".format(key))
+        logger.debug("Removing proxy on {0}".format(key))
         ws_proxy = self.proxies.get(key)
         if ws_proxy:
-            if self._serving:
+            if self.serving:
                 ws_proxy.stop()
             del self.proxies[key]
 
@@ -304,7 +313,7 @@ class WSTunnelClient(object):
         for key, ws_proxy in self.proxies.items():
             logger.debug("Starting proxy on {}".format(key))
             ws_proxy.start(num_processes)
-            self._serving = True
+            self.serving = True
 
     def stop(self):
         """
@@ -314,13 +323,4 @@ class WSTunnelClient(object):
         for key, ws_proxy in self.proxies.items():
             logger.debug("Stopping proxy on {}".format(key))
             ws_proxy.stop()
-        self._serving = False
-
-
-if __name__ == "__main__":
-    clt_tun = WSTunnelClient(proxies={10023: "ws://localhost:9000/test_svil",
-                                      50023: "ws://localhost:9000/test_home"},
-                             family=socket.AF_INET)
-    clt_tun.install_filter(DumpFilter(handler={"filename": "/tmp/clt_log"}))
-    clt_tun.start()
-    IOLoop.instance().start()
+        self.serving = False

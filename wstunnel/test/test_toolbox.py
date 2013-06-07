@@ -14,10 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
+import sys
 import unittest
+
+from tempfile import NamedTemporaryFile
+
+from wstunnel.factory import load_filter
+from wstunnel.filters import DumpFilter
 from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port
 
+
 __author__ = 'fabio'
+
+DELETE_TMP = not sys.platform.startswith("win")
 
 
 class ToolBoxTestCase(unittest.TestCase):
@@ -82,3 +91,13 @@ class ToolBoxTestCase(unittest.TestCase):
         Tests getting a random free port on ipv6 interface
         """
         self._test_random_free_port("::1", socket.AF_INET6, socket.SOCK_STREAM)
+
+    def test_load_filter(self):
+        """
+        Test loading a filter given the fully qualified class name
+        """
+        with NamedTemporaryFile(delete=DELETE_TMP) as dumpf:
+            filter_name = "wstunnel.filters.DumpFilter"
+            DumpFilter.default_conf["handlers"]["dump_file_handler"]["filename"] = dumpf.name
+            f = load_filter(filter_name)
+            self.assertIsInstance(f, DumpFilter)

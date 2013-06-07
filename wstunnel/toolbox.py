@@ -15,9 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import string
-import os
-from binascii import hexlify
 import sys
+
+import os
+
 
 __author__ = 'fabio'
 
@@ -33,6 +34,7 @@ def printable(x):
         return printable(unichr(x))
     else:
         return x if x in string.printable[:-6] else u'.'
+
 
 hex_value = lambda x: hex(x if isinstance(x, int) else ord(x))[2:]
 
@@ -96,8 +98,7 @@ def random_free_port(family=socket.AF_INET, type=socket.SOCK_STREAM):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         s.bind(("", 0))
-        port = s.getsockname()[1]
-        return port
+        return s.getsockname()[1]
     finally:
         s.close()
 
@@ -116,9 +117,3 @@ def get_config(appname="wstunneld", filename="wstunneld.conf"):
             if os.path.exists(conf_file):
                 return conf_file
     return None
-
-
-def hex_and_printable(c):
-    h = hexlify(c.encode("utf-8"))
-    p = c if c in string.printable[:-6] else '.'
-    return h, p

@@ -16,6 +16,7 @@
 import socket
 from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
+from wstunnel.filters import BaseFilter, FilterException
 
 
 class EchoHandler(object):
@@ -72,4 +73,13 @@ class EchoClient():
         self.io_stream.connect(self.address, handle_connect)
 
 
+class RaiseFilter(BaseFilter):
+    """
+    A fake filter raising an exception
+    """
 
+    def ws_to_socket(self, data):
+        raise FilterException(data)
+
+    def socket_to_ws(self, data):
+        raise FilterException(data)

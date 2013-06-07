@@ -4,14 +4,10 @@ endpoint: client
 ws_url: ws://localhost:9000/
 
 # The pid file used to recognize if there's already a running instance
-pid_file: /tmp/wstuncltd.pid
+pid_file: temp/wstuncltd.pid
 
 # If a user is provided the daemon will be demoted to run as this user
-user: null
-
-# Change the working directory. If not provided, the current working directory
-# will be used
-workdir: null
+user: fabio
 
 # This is the set of proxy services.
 # For each service you can specify
@@ -21,14 +17,8 @@ workdir: null
 # to intercept data before being send to WebSocket
 # or before being sent back to client
 proxies:
-    /telnet:
+    /test:
       port: 50023
-      filters: []
-    /ftp:
-      port: 50021
-      filters: []
-    /ssh:
-      port: 50022
       filters: []
 
 # Logging configuration
@@ -50,7 +40,7 @@ logging:
       class: logging.handlers.RotatingFileHandler
       level: INFO
       formatter: simple
-      filename: logs/wstunclt.log
+      filename: logs/wstuncltd.log
       maxBytes: 10485760 # 10MB
       backupCount: 20
       encoding: utf8

@@ -13,11 +13,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import copy
-
 import logging
 from logging import config
+
+import copy
 import yaml
+
 from wstunnel.toolbox import hex_dump
 
 __author__ = 'fabio'

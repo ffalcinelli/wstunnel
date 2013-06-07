@@ -15,13 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import socket
-import os
 from tornado.httpserver import HTTPServer
-from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
-from wstunnel.filters import FilterException, DumpFilter
+from wstunnel.filters import FilterException
 from wstunnel.toolbox import random_free_port
 
 __author__ = 'fabio'
@@ -97,7 +95,14 @@ class WebSocketProxyHandler(WebSocketHandler):
         logger.debug("Closing connection with peer at {0}:{1}".format(*self.remote_address))
         if data:
             logger("Additional data: {}".format(data))
-        super(WebSocketProxyHandler, self).close()
+        self.close()
+
+    def close(self):
+        """
+        Handles closing the websocket
+        """
+        if self.ws_connection:
+            super(WebSocketProxyHandler, self).close()
 
 
 class WSTunnelServer(object):
@@ -172,18 +177,3 @@ class WSTunnelServer(object):
 
     def stop(self):
         pass
-
-
-if __name__ == "__main__":
-    cert_dir = os.path.join(os.path.dirname(__file__), "fixture")
-    srv_tun = WSTunnelServer(9000,
-                             proxies={"/test_svil": ("10.6.72.227", 23),
-                                      "/test_home": ("192.168.1.2", 13131)})
-    # ssl_options={
-    # "certfile": os.path.join(cert_dir, "localhost.pem"),
-    # "keyfile":  os.path.join(cert_dir, "localhost.key"),
-    # }
-
-    srv_tun.install_filter(DumpFilter(handler={"filename": "/tmp/srv_log"}))
-    srv_tun.start()
-    IOLoop.instance().start()

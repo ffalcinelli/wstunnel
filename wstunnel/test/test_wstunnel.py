@@ -31,12 +31,21 @@ ASYNC_TIMEOUT = 2
 #TODO: on windows, temporary files are not working so well...
 DELETE_TMPFILE = not sys.platform.startswith("win")
 
+fixture = os.path.join(os.path.dirname(__file__), "fixture")
+
 
 class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
+    """
+    TestCase for endpoints behaviour on various conditions
+    """
+
     def no_response(self, response):
         self.stop()
 
     def test_no_ws_endpoint(self):
+        """
+        Tests the client tunnel endpoint behaviour when there's no server counterpart
+        """
         clt_tun = WSTunnelClient(family=socket.AF_INET,
                                  io_loop=self.io_loop)
         clt_tun.add_proxy("test", WebSocketProxy(port=0, ws_url="ws://localhost:{0}/test".format(random_free_port())))
@@ -47,6 +56,9 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         self.assertRaises(AssertionError, self.wait, timeout=ASYNC_TIMEOUT)
 
     def test_no_server_service(self):
+        """
+        Tests the server tunnel endpoint behaviour when there's no service to connect
+        """
         srv_tun = WSTunnelServer(0, io_loop=self.io_loop, proxies={"/test": ("127.0.0.1", random_free_port())})
         srv_tun.start()
         clt_tun = WSTunnelClient(io_loop=self.io_loop)
@@ -85,6 +97,9 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.client = EchoClient(self.clt_tun.address_list[0])
 
     def on_response_received(self, response):
+        """
+        Callback invoked when response is received
+        """
         self.assertEqual(self.message.upper(), response)
         self.stop()
 
@@ -97,7 +112,8 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def test_request_response_binary(self):
         """
-        Test a simple request/response chat through the websocket tunnel
+        Test a simple request/response chat through the websocket tunnel. Message contains
+        non utf-8 characters
         """
         self.message = bytes(b"\xff\xfd\x18\xff\xfd\x1f\xff\xfd#\xff\xfd'\xff\xfd$")
         self.client.send_message(self.message, self.on_response_received)
@@ -105,7 +121,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def test_client_dump_filter(self):
         """
-        Test the installing of a dump filter into client proxies
+        Test the installing of a dump filter into client endpoint
         """
         with NamedTemporaryFile(delete=DELETE_TMPFILE) as logf:
             client_filter = DumpFilter(handler={"filename": logf.name})
@@ -122,7 +138,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def test_server_dump_filter(self):
         """
-        Test the installing of a dump filter into client e server proxies
+        Test the installing of a dump filter into server endpoint
         """
         with NamedTemporaryFile(delete=DELETE_TMPFILE) as logf:
             server_filter = DumpFilter(handler={"filename": logf.name})
@@ -137,15 +153,24 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
             self.srv_tun.uninstall_filter(server_filter)
 
+    def test_add_get_remove_proxy(self):
+        """
+        Tests adding/remove/get operations
+        """
+        ws_proxy = WebSocketProxy(port=0, ws_url="ws://localhost:9000/test_add_remove")
+        self.assertFalse(ws_proxy.serving)
+        self.clt_tun.add_proxy("test_add_remove", ws_proxy)
+        self.assertEqual(ws_proxy, self.clt_tun.get_proxy("test_add_remove"))
+        self.assertTrue(ws_proxy.serving)
+        self.clt_tun.remove_proxy("test_add_remove")
+        self.assertFalse(ws_proxy.serving)
+
     def tearDown(self):
 
         for srv in self.srv, self.srv_tun, self.clt_tun:
             srv.stop()
 
         super(WSTunnelTestCase, self).tearDown()
-
-
-cert_dir = os.path.join(os.path.dirname(__file__), "fixture", )
 
 
 class WSTunnelSSLTestCase(WSTunnelTestCase):
@@ -162,8 +187,8 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
                                       proxies={"/test": self.srv.address_list[0]},
                                       io_loop=self.io_loop,
                                       ssl_options={
-                                          "certfile": os.path.join(cert_dir, "localhost.pem"),
-                                          "keyfile": os.path.join(cert_dir, "localhost.key"),
+                                          "certfile": os.path.join(fixture, "localhost.pem"),
+                                          "keyfile": os.path.join(fixture, "localhost.key"),
                                       })
         self.srv_tun.start()
         self.clt_tun = WSTunnelClient(proxies={0: "wss://localhost:{0}/test".format(self.srv_tun.port)},

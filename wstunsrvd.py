@@ -1,3 +1,4 @@
+#!/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) 2013  Fabio Falcinelli
 #
@@ -13,24 +14,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-__author__ = 'fabio'
+import argparse
+import sys
+
+__author__ = "fabio"
 
 
-class enhance_log(object):
-    """
-    Enables the given logger before calling the function.
-    """
-
-    def __init__(self, logger, trace=False):
-        self._logger = logger
-        self._trace = trace
-
-    def __call__(self, funct):
-        def wrapper(*args, **kwargs):
-            self._logger.disabled = False
-            #self._logger.debug("Calling method {}".format(funct.__name__))
-            result = funct(*args, **kwargs)
-            #self._logger.debug("Exit from method {}".format(funct.__name__))
-            return result
-
-        return wrapper
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='WebSocket tunnel server endpoint')
+    if not sys.platform.startswith("win"):
+        from wstunnel import daemon
+        daemon.main(parser, "wstunsrvd")
+    # else:
+    #     from wstunnel import service
+    #     service.main(parser, "wstunsrvd")

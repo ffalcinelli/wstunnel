@@ -15,14 +15,10 @@ ssl_options:
   keyfile: null
 
 # The pid file used to recognize if there's already a running instance
-pid_file: /tmp/wstunsrvd.pid
+pid_file: temp/wstunsrvd.pid
 
 # If a user is provided the daemon will be demoted to run as this user
 user: null
-
-# Change the working directory. If not provided, the current working directory
-# will be used
-workdir: null
 
 # This the resource/service mapping.
 # For each resource you can map a destination host:port
@@ -31,14 +27,6 @@ workdir: null
 proxies:
   /telnet:
     address: 192.168.1.2:13131
-    filters: [wstunnel.filters.DumpFilter]
-
-  /ftp:
-    address: 192.168.1.2:21
-    filters: [wstunnel.filters.DumpFilter]
-
-  /ssh:
-    address: 192.168.1.2:22
     filters: []
 
 # WSTunnel logging configuration
@@ -60,7 +48,7 @@ logging:
       class: logging.handlers.RotatingFileHandler
       level: INFO
       formatter: simple
-      filename: logs/wstunsrv.log
+      filename: logs/wstunsrvd.log
       maxBytes: 10485760 # 10MB
       backupCount: 20
       encoding: utf8

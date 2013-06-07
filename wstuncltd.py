@@ -1,3 +1,4 @@
+#!/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) 2013  Fabio Falcinelli
 #
@@ -13,26 +14,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
-from logging import handlers
-import os
+import argparse
+import sys
 
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+__author__ = "fabio"
 
-__author__ = 'fabio'
 
-#monkey patch scheme to support ws and wss
-ws_scheme = ["ws", "wss"]
-for scheme in (urlparse.uses_relative,
-               urlparse.uses_netloc,
-               urlparse.non_hierarchical,
-               urlparse.uses_params,
-               urlparse.uses_query,
-               urlparse.uses_fragment):
-    scheme.extend(ws_scheme)
-
-parse_url = urlparse.urlparse
-join_url = urlparse.urljoin
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='WebSocket tunnel client endpoint')
+    if not sys.platform.startswith("win"):
+        from wstunnel import daemon
+        daemon.main(parser, "wstunctld")
+    # else:
+    #     from wstunnel import service
+    #     service.main(parser, "wstunctld")
