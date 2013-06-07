@@ -7,7 +7,7 @@ ws_url: ws://localhost:9000/
 pid_file: temp/wstuncltd.pid
 
 # If a user is provided the daemon will be demoted to run as this user
-user: fabio
+user: null
 
 # This is the set of proxy services.
 # For each service you can specify
