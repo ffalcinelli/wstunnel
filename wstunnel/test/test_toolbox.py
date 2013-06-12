@@ -23,13 +23,15 @@ from wstunnel.factory import load_filter
 from wstunnel.filters import DumpFilter
 from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port
 
-
 __author__ = 'fabio'
-
 DELETE_TMP = not sys.platform.startswith("win")
 
 
 class ToolBoxTestCase(unittest.TestCase):
+    """
+    Test cases for utility methods
+    """
+
     def test_address_to_tuple(self):
         """
         Tests the address to tuple conversions

@@ -1,0 +1,3 @@
+-r requirements.txt
+pywin32==218
+py2exe==0.6.9

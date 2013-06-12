@@ -14,17 +14,4 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import argparse
-import sys
-
-__author__ = "fabio"
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='WebSocket tunnel server endpoint')
-    if not sys.platform.startswith("win"):
-        from wstunnel import daemon
-        daemon.main(parser, "wstunsrvd")
-    # else:
-    #     from wstunnel import service
-    #     service.main(parser, "wstunsrvd")
+__author__ = 'fabio'

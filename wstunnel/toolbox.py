@@ -15,16 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import string
-import sys
-
 import os
-
+from wstunnel import unichr
 
 __author__ = 'fabio'
-
-PY2 = sys.version_info[0] == 2
-if not PY2:
-    unichr = chr
 
 
 def printable(x):
@@ -103,7 +97,7 @@ def random_free_port(family=socket.AF_INET, type=socket.SOCK_STREAM):
         s.close()
 
 
-def get_config(appname="wstunneld", filename="wstunneld.conf"):
+def get_config(appname="wstunneld", filename="wstunneld.yml"):
     """
     Search for a configuration file in current, user home or /etc (not suitable for windows...) folders
     """

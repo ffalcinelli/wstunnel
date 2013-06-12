@@ -13,9 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
-from logging import handlers
-import os
+import sys
 
 try:
     import urlparse
@@ -36,3 +34,20 @@ for scheme in (urlparse.uses_relative,
 
 parse_url = urlparse.urlparse
 join_url = urlparse.urljoin
+
+PY2 = sys.version_info[0] == 2
+if not PY2:
+    unichr = chr
+else:
+    unichr = unichr
+
+if sys.platform.startswith("win"):
+    #_winreg has been renamed in python3 to winreg
+    if PY2:
+        import _winreg as winreg
+    else:
+        import winreg
+    winreg = winreg
+
+bytes_type = type(b"")
+string_type = type(u"")

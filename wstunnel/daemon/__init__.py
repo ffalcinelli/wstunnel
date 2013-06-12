@@ -1,3 +1,4 @@
+#!/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) 2013  Fabio Falcinelli
 #
@@ -16,21 +17,13 @@
 import sys
 import atexit
 import signal
-import pwd
 import logging
 import time
-import argparse
-
 import os
-import yaml
 from tornado.ioloop import IOLoop
-
 from wstunnel.factory import create_ws_client_endpoint, create_ws_server_endpoint
-from wstunnel.toolbox import get_config
-
 
 __author__ = 'fabio'
-
 SIG_NAMES = dict((k, v) for v, k in signal.__dict__.items() if v.startswith('SIG'))
 SHUTDOWN_POLL = 0.2
 
@@ -61,6 +54,8 @@ class Daemon(object):
 
     @uid.setter
     def uid(self, value):
+        import pwd
+
         if isinstance(value, int):
             self.user = pwd.getpwuid(value).pw_name
         else:
@@ -246,54 +241,22 @@ class WSTunnelDaemon(Daemon):
         IOLoop.instance().stop()
 
 
-class wstuncltd(WSTunnelDaemon):
+class WSTunnelClientDaemon(WSTunnelDaemon):
     """
     Shortcut to have a wstunnel client endpoint
     """
 
     def run(self):
         self._srv = create_ws_client_endpoint(self.config)
-        super(wstuncltd, self).run()
+        super(WSTunnelClientDaemon, self).run()
 
 
-class wstunsrvd(WSTunnelDaemon):
+class WSTunnelServerDaemon(WSTunnelDaemon):
     """
     Shortcut to have a wstunnel server endpoint
     """
 
     def run(self):
         self._srv = create_ws_server_endpoint(self.config)
-        super(wstunsrvd, self).run()
-
-
-def main(parser=None, name="wstunneld"):
-    if not parser:
-        parser = argparse.ArgumentParser(description='WebSocket tunnel endpoint')
-
-    parser.add_argument("-c", "--config",
-                        metavar="CONF_FILE",
-                        help="path to a configuration file",
-                        default=get_config("wstunneld", "{0}.yml".format(name)))
-    # parser.add_argument("-p", "--pid-file",
-    #                     metavar="PID_FILE",
-    #                     help="path to a pid file")
-    parser.add_argument("command",
-                        help="Command to execute", choices=["start", "stop", "restart"])
-    options = parser.parse_args()
-
-    if not options.config:
-        parser.error("No configuration file found. Try using --config option.")
-
-    with open(options.config, 'rt') as f:
-        conf = yaml.load(f.read())
-
-        if name == "wstuncltd" or conf["endpoint"] == "client":
-            wstund = wstuncltd(conf)
-        elif name == "wstunsrvd" or conf["endpoint"] == "server":
-            wstund = wstunsrvd(conf)
-        else:
-            raise ValueError("Wrong name for endpoint")
-
-        getattr(wstund, options.command)()
-        sys.exit(0)
+        super(WSTunnelServerDaemon, self).run()
 

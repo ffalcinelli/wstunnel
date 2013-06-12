@@ -25,12 +25,9 @@ from wstunnel.server import WSTunnelServer
 from wstunnel.toolbox import hex_dump, random_free_port
 
 __author__ = 'fabio'
-
 ASYNC_TIMEOUT = 2
-
 #TODO: on windows, temporary files are not working so well...
 DELETE_TMPFILE = not sys.platform.startswith("win")
-
 fixture = os.path.join(os.path.dirname(__file__), "fixture")
 
 

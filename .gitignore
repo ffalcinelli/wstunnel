@@ -4,3 +4,5 @@ build
 .tox
 logs
 coverage
+dist
+.idea

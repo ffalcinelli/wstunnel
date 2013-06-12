@@ -23,14 +23,7 @@ from ws4py.client import WebSocketBaseClient
 from ws4py.exc import HandshakeError
 from wstunnel.filters import FilterException
 
-#The urlparse module is renamed to urllib.parse in Python 3.
-try:
-    from urlparse import urljoin, urlparse
-except ImportError:
-    from urllib.parse import urljoin, urlparse
-
 __author__ = "fabio"
-
 logger = logging.getLogger(__name__)
 
 
