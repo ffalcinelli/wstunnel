@@ -22,7 +22,7 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.2',
+              version='0.0.1',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',
@@ -36,6 +36,8 @@ kwargs = dict(name='wstunnel',
                   'Intended Audience :: Telecommunications Industry',
                   'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
                   'Programming Language :: Python',
+                  'Programming Language :: Python :: 2.7',
+                  'Programming Language :: Python :: 3.3',
                   'Topic :: Software Development :: Libraries :: Python Modules',
                   'Topic :: Utilities',
               ],
