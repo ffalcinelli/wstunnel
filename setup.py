@@ -22,12 +22,11 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.1',
+              version='0.0.2',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',
               url='https://github.com/ffalcinelli/wstunnel',
-              download_url='https://github.com/ffalcinelli/wstunnel/tarball/0.0.1',
               keywords=['tunneling', 'websocket', 'ssl'],
               packages=find_packages(),
               classifiers=[
@@ -43,11 +42,15 @@ kwargs = dict(name='wstunnel',
               setup_requires=['nose'],
               test_suite='nose.collector')
 
+kwargs["download_url"] ='https://github.com/ffalcinelli/wstunnel/tarball/{0}'.format(kwargs.get("version"))
+
+install_requires = ["PyYAML>=3.10",
+                    "tornado>=3.0.2",
+                    "ws4py>=0.3.0-beta",
+                    "nose>=1.3.0",
+                    "mock>=1.0.1"]
+
 if not sys.platform.startswith("win"):
-    install_requires = []
-    with open(os.path.join(os.path.dirname(__file__), "requirements.txt")) as reqs:
-        for req in reqs:
-            install_requires.append(req)
 
     kwargs["install_requires"] = install_requires
     kwargs["entry_points"] = {
@@ -58,10 +61,8 @@ if not sys.platform.startswith("win"):
     }
 else:
 
-    install_requires = []
-    with open(os.path.join(os.path.dirname(__file__), "requirements_windows.txt")) as reqs:
-        for req in reqs:
-            install_requires.append(req)
+    install_requires.extend(["pywin32>=218",
+                             "py2exe>=0.6.9", ])
 
     if "py2exe" in sys.argv:
         if wstunnel.PY2:
