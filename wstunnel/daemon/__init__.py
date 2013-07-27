@@ -1,4 +1,3 @@
-#!/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (C) 2013  Fabio Falcinelli
 #
@@ -36,14 +35,14 @@ class Daemon(object):
     def __init__(self, pid_file, user=None, workdir="/", umask=0):
         self.pid_file = pid_file
         self.user = user
-        self.workdir = workdir
+        self.workdir = workdir if workdir else os.getcwd()
         self.umask = umask
         self.name = type(self).__name__
         self.dev_null = None
 
     def switch_user(self):
         """
-        Change the user running the daemon
+        Changes the user running the daemon
         """
         if self.user:
             self.uid = self.user
@@ -64,7 +63,7 @@ class Daemon(object):
 
     def hush(self, **kwargs):
         """
-        Redirect standard fd to the /dev/null if no one is provided
+        Redirects standard fds to the /dev/null if no one is provided
         """
         sys.stdout.flush()
         sys.stderr.flush()
@@ -81,20 +80,20 @@ class Daemon(object):
 
     def delete_pid_file(self):
         """
-        If no daemon running, delete the pid file
+        If no daemon running, deletes the pid file
         """
         if os.path.exists(self.pid_file) and not self.is_running():
             os.remove(self.pid_file)
 
     def register_shutdown(self):
         """
-        Register the shutdown hook when trapping SIGTERM
+        Registers the shutdown hook when trapping SIGTERM
         """
         signal.signal(signal.SIGTERM, self._gracefully_terminate)
 
     def daemonize(self):
         """
-        Daemonize the process with the double fork hack
+        Daemonizes the process with the double fork hack
         """
         try:
             pid = os.fork()
@@ -124,7 +123,7 @@ class Daemon(object):
 
     def read_pid_file(self):
         """
-        Read the pid from the pid file, if available
+        Reads the pid from the pid file, if available
         """
         try:
             with open(self.pid_file, 'r') as pf:
@@ -135,7 +134,7 @@ class Daemon(object):
 
     def is_running(self, pid=None):
         """
-        Check if the given pid corresponds to an alive process. If no pid is given, try to read from pid file
+        Checks if the given pid corresponds to an alive process. If no pid is given, tries to read from pid file
         """
         pid = pid if pid else self.read_pid_file()
         try:
@@ -150,7 +149,7 @@ class Daemon(object):
 
     def start(self):
         """
-        Starts the daemon. If a user have been setup, demote to that user
+        Starts the daemon. If a user have been setup, demotes to that user
         """
         pid = self.read_pid_file()
         if not pid:
@@ -209,9 +208,9 @@ class WSTunnelDaemon(Daemon):
     """
 
     def __init__(self, config):
-        super(WSTunnelDaemon, self).__init__(pid_file=config["pid_file"],
-                                             user=config["user"],
-                                             workdir=config.get("workdir", os.getcwd()))
+        super(WSTunnelDaemon, self).__init__(pid_file=config.get("pid_file"),
+                                             user=config.get("user"),
+                                             workdir=config.get("workdir"))
         self.config = config
         logging.config.dictConfig(self.config["logging"])
         self._srv = None

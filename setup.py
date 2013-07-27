@@ -27,6 +27,8 @@ kwargs = dict(name='wstunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',
               url='https://github.com/ffalcinelli/wstunnel',
+              download_url='https://github.com/ffalcinelli/wstunnel/tarball/0.0.1',
+              keywords=['tunneling', 'websocket', 'ssl'],
               packages=find_packages(),
               classifiers=[
                   'Development Status :: 2 - Pre-Alpha',
@@ -74,7 +76,6 @@ else:
                     self.company_name = "N.A."
                     self.copyright = "Copyright (c) 2013 Fabio Falcinelli"
                     self.name = kwargs["name"]
-
 
             tunclt_svc = Target(
                 # used for the versioninfo resource
