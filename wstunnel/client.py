@@ -15,105 +15,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import socket
-import ssl
+from tornado import httpclient
+from tornado.ioloop import IOLoop
 
-from tornado import escape, iostream
 from tornado.tcpserver import TCPServer
-from ws4py.client import WebSocketBaseClient
-from ws4py.exc import HandshakeError
+from tornado.websocket import WebSocketClientConnection
 from wstunnel.filters import FilterException
 
 __author__ = "fabio"
 logger = logging.getLogger(__name__)
 
 
-#TODO: remove this class when the send issue will be fixed
-class TornadoWebSocketClient(WebSocketBaseClient):
-    def __init__(self, url, protocols=None, extensions=None, io_loop=None):
+def websocket_connect(url, io_loop=None, callback=None, connect_timeout=None, **kwargs):
+    """Client-side websocket support.
 
-        WebSocketBaseClient.__init__(self, url, protocols, extensions)
-        if self.scheme == "wss":
-            self.sock = ssl.wrap_socket(self.sock, do_handshake_on_connect=False)
-            self.io = iostream.SSLIOStream(self.sock, io_loop)
-            assert self.sock is self.io.socket
-        else:
-            self.io = iostream.IOStream(self.sock, io_loop)
-        self.io_loop = io_loop
+    Takes a url and returns a Future whose result is a
+    `WebSocketClientConnection`.
+    """
+    options = httpclient.HTTPRequest._DEFAULTS.copy()
+    options.update(kwargs)
 
-    def connect(self):
-        """
-        Connects the websocket and initiate the upgrade handshake.
-        """
-        self.io.set_close_callback(self.__connection_refused)
-        self.io.connect((self.host, int(self.port)), self.__send_handshake)
-
-    def __connection_refused(self, *args, **kwargs):
-        self.server_terminated = True
-        self.closed(1005, 'Connection refused')
-
-    def __send_handshake(self):
-        self.io.set_close_callback(self.__connection_closed)
-        self.io.write(escape.utf8(self.handshake_request),
-                      self.__handshake_sent)
-
-    def __connection_closed(self, *args, **kwargs):
-        self.server_terminated = True
-        self.closed(1006, 'Connection closed during handshake')
-
-    def __handshake_sent(self):
-        self.io.read_until(b"\r\n\r\n", self.__handshake_completed)
-
-    def __handshake_completed(self, data):
-        self.io.set_close_callback(None)
-        try:
-            response_line, _, headers = data.partition(b'\r\n')
-            self.process_response_line(response_line)
-            protocols, extensions = self.process_handshake_header(headers)
-        except HandshakeError:
-            self.close_connection()
-            raise
-
-        self.opened()
-        self.io.set_close_callback(self.__stream_closed)
-        self.io.read_bytes(self.reading_buffer_size, self.__fetch_more)
-
-    def send(self, payload, binary=False):
-        self.sock = self.io.socket
-        return super(TornadoWebSocketClient, self).send(payload, binary)
-
-    def __fetch_more(self, bytes):
-        try:
-            should_continue = self.process(bytes)
-        except:
-            should_continue = False
-
-        if should_continue:
-            self.io.read_bytes(self.reading_buffer_size, self.__fetch_more)
-        else:
-            self.__gracefully_terminate()
-
-    def __gracefully_terminate(self):
-        self.client_terminated = self.server_terminated = True
-
-        try:
-            if not self.stream.closing:
-                self.closed(1006)
-        finally:
-            self.close_connection()
-
-    def __stream_closed(self, *args, **kwargs):
-        self.io.set_close_callback(None)
-        code = 1006
-        reason = None
-        if self.stream.closing:
-            code, reason = self.stream.closing.code, self.stream.closing.reason
-        self.closed(code, reason)
-
-    def close_connection(self):
-        """
-        Close the underlying connection
-        """
-        self.io.close()
+    if io_loop is None:
+        io_loop = IOLoop.current()
+    request = httpclient.HTTPRequest(url, connect_timeout=connect_timeout)
+    request = httpclient._RequestProxy(
+        request, options)
+    conn = WebSocketClientConnection(io_loop, request)
+    if callback is not None:
+        io_loop.add_future(conn.connect_future, callback)
+    return conn.connect_future
 
 
 class WebSocketProxy(TCPServer):
@@ -130,6 +60,7 @@ class WebSocketProxy(TCPServer):
                   kwargs.get("backlog", 128))
 
         self.ws_url = ws_url
+        self.ws_options = kwargs.get("ws_options", None)
         self.filters = kwargs.get("filters", [])
         self.serving = False
 
@@ -142,7 +73,7 @@ class WebSocketProxy(TCPServer):
         Handle a new client connection with a proxy over websocket
         """
         logger.info("Got connection from {0}:{1}".format(*address))
-        ws = WebSocketProxyConnection(self.ws_url, stream, address, filters=self.filters)
+        ws = WebSocketProxyConnection(self.ws_url, stream, address, filters=self.filters, ws_options=self.ws_options)
         logger.debug("Connecting to WebSocket endpoint at {}".format(self.ws_url))
         ws.connect()
 
@@ -155,34 +86,46 @@ class WebSocketProxy(TCPServer):
         self.serving = False
 
 
-class WebSocketProxyConnection(TornadoWebSocketClient):
+class WebSocketProxyConnection(object):
     """
     Handles the client connection and works as a proxy over a websocket connection
     """
 
-    def __init__(self, url, io_stream, address, **kwargs):
-        super(WebSocketProxyConnection, self).__init__(url,
-                                                       kwargs.get("protocols"),
-                                                       kwargs.get("extensions"),
-                                                       kwargs.get("io_loop"))
+    def __init__(self, url, io_stream, address, ws_options=None, **kwargs):
+        self.url = url
+        self.io_loop = kwargs.get("io_loop")
+        self.connect_timeout = kwargs.get("connect_timeout", None)
+        self.keep_alive = kwargs.get("keep_alive", None)
+        self.ws_options = ws_options
         self.io_stream, self.address = io_stream, address
         self.filters = kwargs.get("filters", [])
         self.io_stream.set_close_callback(self.handle_close)
+        self.ws_conn = None
 
-    def opened(self):
+    def connect(self):
+        websocket_connect(self.url,
+                          self.io_loop,
+                          callback=self.opened,
+                          connect_timeout=self.connect_timeout,
+                          **self.ws_options)
+
+
+    def opened(self, ws_conn):
         """
         When the websocket connection is handshaked, start reading for data over the client socket
         connection
         """
         logger.debug("Connection with websocket established")
+        self.ws_conn = ws_conn.result()
+        self.ws_conn.on_message = self.handle_receive
         self.io_stream.read_until_close(self.handle_close, streaming_callback=self.handle_forward)
 
-    def received_message(self, message):
+    def handle_receive(self, message):
         """
         On a message received from websocket, send back to client
         """
         try:
-            data = bytes(message.data)
+            data = bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
             if data:
@@ -192,7 +135,7 @@ class WebSocketProxyConnection(TornadoWebSocketClient):
             #TODO: define better codes
             self.close(code=2022, reason=e)
 
-    def closed(self, code, reason=None):
+    def close(self, code, reason=None):
         """
         When WebSocket gets closed, close the client socket too
         """
@@ -208,21 +151,18 @@ class WebSocketProxyConnection(TornadoWebSocketClient):
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)
             if data:
-                self.send(data, binary=True)
+                self.ws_conn.write_message(data, binary=True)
         except FilterException as e:
             logger.exception(e)
             #TODO: define better codes
             self.close(code=2021, reason=e)
 
-    def handle_close(self, data=None):
+    def handle_close(self):
         """
         Handles the close event from the client socket
         """
         logger.debug("Closing connection with client at {0}:{1}".format(*self.address))
-        if data:
-            logger.debug("Additional data: {}".format(data))
-        if not self.terminated:
-            self.terminate()
+        self.close(code=2020, reason="Client disconnected")
 
 
 class WSTunnelClient(object):
@@ -230,20 +170,23 @@ class WSTunnelClient(object):
     Manages redirects from local ports to remote websocket servers
     """
 
-    def __init__(self, proxies=None, address='', family=socket.AF_UNSPEC, io_loop=None, ssl_options=None, **kwargs):
+    def __init__(self, proxies=None, address='', family=socket.AF_UNSPEC, io_loop=None, ssl_options=None,
+                 ws_options=None, **kwargs):
 
-        self.ws_options = {
+        self.stream_options = {
             "address": address,
             "family": family,
             "io_loop": io_loop,
             "ssl_options": ssl_options,
         }
+        self.ws_options = ws_options
         self.proxies = {}
         self.serving = False
         self._num_proc = 1
         if proxies:
             for port, ws_url in proxies.items():
-                self.add_proxy(port, WebSocketProxy(port=port, ws_url=ws_url, **self.ws_options))
+                self.add_proxy(port, WebSocketProxy(port=port, ws_url=ws_url, ws_options=self.ws_options,
+                                                    **self.stream_options))
 
     def add_proxy(self, key, ws_proxy):
         """

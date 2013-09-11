@@ -22,7 +22,7 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.1',
+              version='0.0.2',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',
@@ -44,11 +44,10 @@ kwargs = dict(name='wstunnel',
               setup_requires=['nose'],
               test_suite='nose.collector')
 
-kwargs["download_url"] ='https://github.com/ffalcinelli/wstunnel/tarball/{0}'.format(kwargs.get("version"))
+kwargs["download_url"] = 'https://github.com/ffalcinelli/wstunnel/tarball/{0}'.format(kwargs.get("version"))
 
 install_requires = ["PyYAML>=3.10",
                     "tornado>=3.0.2",
-                    "ws4py>=0.3.0-beta",
                     "nose>=1.3.0",
                     "mock>=1.0.1"]
 

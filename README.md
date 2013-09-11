@@ -1,7 +1,7 @@
 wstunnel
 ========
 
-A WebSocket tunneling software written in python on top of tornado http://www.tornadoweb.org/ web framework for asynchronous I/O.
+A WebSocket tunneling software written in python on top of [tornado](http://www.tornadoweb.org/) web framework for asynchronous I/O.
 
 TravisCI status: [![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel)
 
@@ -18,7 +18,7 @@ Warnings
 On windows the server tunnel endpoint may perform not so well. There's a limit on `select()` call that impacts Tornado
 loop for asynchronous I/O.
 
-You may want to read this conversation https://groups.google.com/forum/?fromgroups#!topic/python-tornado/oSbxI9X28MM
+You may want to read [this conversation](https://groups.google.com/forum/?fromgroups#!topic/python-tornado/oSbxI9X28MM) for more details.
 
 Quick start
 ===========
@@ -28,7 +28,9 @@ Installation
 
 You can install `wstunnel` with
 
-   $ python setup.py install
+```
+$ python setup.py install
+```
 
 This will install the packages and two execution scripts, `wstuncltd` and `wstunsrvd` for the client and server endpoints respectively.
 
@@ -36,7 +38,9 @@ The scripts act like daemons on unix system and services on windows.
 
 On the former platform you can provide configuration with the -c option
 
-   $ wstuncltd -c conf/client.yml start
+```
+$ wstuncltd -c conf/client.yml start
+```
 
 while on the latter platform a regitry key is expected
 
@@ -55,7 +59,9 @@ Windows Registry Editor Version 5.00
 
 On windows you can get a binary distribution by running
 
-   $ python setup.py py2exe
+```
+$ python setup.py py2exe
+```
 
 in the `dist` folder a `wstuncltd.exe` and `wstunsrvd.exe` will be generated.
 
@@ -191,15 +197,21 @@ The developer way
 
 If you want to help me and contribute, start by cloning the repo
 
-    $ git clone https://github.com/ffalcinelli/wstunnel wstunnel
+```
+$ git clone https://github.com/ffalcinelli/wstunnel wstunnel
+```
 
 Create a `virtualenv`, it's a recommended practice, and install the dependencies using `pip`
 
-    $ pip install -r requirements.txt
+```
+$ pip install -r requirements.txt
+```
 
 ### Windows requirements
 
-    $ pip install -r requirements_windows.txt
+```
+$ pip install -r requirements_windows.txt
+```
 
 Anyway, `pywin32` and `py2exe` have to be installed using their installers.
 
@@ -210,12 +222,12 @@ Happy hacking :-)
 TODOs
 =====
 
- - [x] "Daemonize" the standalone way on unix
- - [x] A Windows Service would be nice for the Microsoft's platform
- - [x] Create 2 different executables for client and server tunnels (maybe `wstuncltd` and `wstunsrvd`?). Explicit is better than implicit
- - [ ] Enhance the `filter` support with custom configuration from yaml files
- - [ ] Test, test, test... Expecially on Windows
- - [ ] Provide an NSIS installer and a nicer way to customize on windows
+- ~~"Daemonize" the standalone way on unix~~
+- ~~A Windows Service would be nice for the Microsoft's platform~~
+- ~~Create 2 different executables for client and server tunnels (maybe `wstuncltd` and `wstunsrvd`?). Explicit is better than implicit~~
+- Enhance the `filter` support with custom configuration from yaml files
+- Test, test, test... Expecially on Windows
+- Provide an NSIS installer and a nicer way to customize on windows
 
 License
 =======

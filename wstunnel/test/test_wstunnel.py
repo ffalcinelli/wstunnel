@@ -87,7 +87,8 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.clt_tun = WSTunnelClient(proxies={0: "ws://localhost:{0}/test".format(self.srv_tun.port)},
                                       address=self.srv_tun.address,
                                       family=socket.AF_INET,
-                                      io_loop=self.io_loop)
+                                      io_loop=self.io_loop,
+                                      ws_options={"validate_cert": False})
         self.clt_tun.start()
 
         self.message = "Hello World!".encode("utf-8")
@@ -191,7 +192,8 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
         self.clt_tun = WSTunnelClient(proxies={0: "wss://localhost:{0}/test".format(self.srv_tun.port)},
                                       address=self.srv_tun.address,
                                       family=socket.AF_INET,
-                                      io_loop=self.io_loop)
+                                      io_loop=self.io_loop,
+                                      ws_options={"validate_cert": False})
         self.clt_tun.start()
 
         self.message = "Hello World!".encode("utf-8")
