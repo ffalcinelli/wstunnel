@@ -73,13 +73,25 @@ class EchoClient():
         self.io_stream.connect(self.address, handle_connect)
 
 
-class RaiseFilter(BaseFilter):
+class RaiseFromWSFilter(BaseFilter):
     """
-    A fake filter raising an exception
+    A fake filter raising an exception when receiving data from websocket
     """
 
     def ws_to_socket(self, data):
         raise FilterException(data)
+
+    def socket_to_ws(self, data):
+        return data
+
+
+class RaiseToWSFilter(BaseFilter):
+    """
+    A fake filter raising an exception when sending data to websocket
+    """
+
+    def ws_to_socket(self, data):
+        return data
 
     def socket_to_ws(self, data):
         raise FilterException(data)

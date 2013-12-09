@@ -1,0 +1,5 @@
+[run]
+source = wstunnel
+
+[report]
+omit = */svc/*, wstunnel/registry.py

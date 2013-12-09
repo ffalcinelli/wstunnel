@@ -21,9 +21,9 @@ from wstunnel import unichr
 __author__ = 'fabio'
 
 
-def printable(x):
+def printable(x, encoding="UTF-8"):
     if isinstance(x, bytes):
-        return x if x in string.printable[:-6].encode("utf-8") else b'.'
+        return x if x in string.printable[:-6].encode(encoding) else b'.'
     elif isinstance(x, int):
         return printable(unichr(x))
     else:
@@ -86,7 +86,7 @@ def hex_dump(buff, size=16):
 
 def random_free_port(family=socket.AF_INET, type=socket.SOCK_STREAM):
     """
-    Pick a free port in the given range
+    Pick a free port choosen by the operating system
     """
     s = socket.socket(family, type)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

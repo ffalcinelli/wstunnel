@@ -18,11 +18,12 @@ import sys
 from tempfile import NamedTemporaryFile
 import os
 from tornado.testing import AsyncTestCase, LogTrapTestCase
-from wstunnel.filters import DumpFilter
-from wstunnel.test import EchoServer, EchoClient
+from wstunnel.filters import DumpFilter, FilterException
+from wstunnel.test import EchoServer, EchoClient, RaiseFromWSFilter, RaiseToWSFilter
 from wstunnel.client import WSTunnelClient, WebSocketProxy
 from wstunnel.server import WSTunnelServer
 from wstunnel.toolbox import hex_dump, random_free_port
+
 
 __author__ = 'fabio'
 ASYNC_TIMEOUT = 2
@@ -94,6 +95,13 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.message = "Hello World!".encode("utf-8")
         self.client = EchoClient(self.clt_tun.address_list[0])
 
+    def tearDown(self):
+
+        for srv in self.srv, self.srv_tun, self.clt_tun:
+            srv.stop()
+
+        super(WSTunnelTestCase, self).tearDown()
+
     def on_response_received(self, response):
         """
         Callback invoked when response is received
@@ -151,6 +159,28 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
             self.srv_tun.uninstall_filter(server_filter)
 
+    def test_raise_filter_exception_from_ws(self):
+        """
+        Tests the behaviour when a filter raises exception reading from websocket
+        """
+        server_filter = RaiseFromWSFilter()
+        self.srv_tun.install_filter(server_filter)
+
+        self.client.send_message(self.message, self.on_response_received)
+        #TODO: this generically catch assertion errors... We should get the inner FilterException in some way
+        self.assertRaises(AssertionError, self.wait, timeout=1)
+
+    def test_raise_filter_exception_to_ws(self):
+        """
+        Tests the behaviour when a filter raises exception writing to websocket
+        """
+        server_filter = RaiseToWSFilter()
+        self.srv_tun.install_filter(server_filter)
+
+        self.client.send_message(self.message, self.on_response_received)
+        #TODO: this generically catch assertion errors... We should get the inner FilterException in some way
+        self.assertRaises(AssertionError, self.wait, timeout=1)
+
     def test_add_get_remove_proxy(self):
         """
         Tests adding/remove/get operations
@@ -162,13 +192,6 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.assertTrue(ws_proxy.serving)
         self.clt_tun.remove_proxy("test_add_remove")
         self.assertFalse(ws_proxy.serving)
-
-    def tearDown(self):
-
-        for srv in self.srv, self.srv_tun, self.clt_tun:
-            srv.stop()
-
-        super(WSTunnelTestCase, self).tearDown()
 
 
 class WSTunnelSSLTestCase(WSTunnelTestCase):

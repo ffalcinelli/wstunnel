@@ -140,7 +140,8 @@ class WebSocketProxyConnection(object):
         When WebSocket gets closed, close the client socket too
         """
         logger.debug("Connection with websocket has been closed: reason {1} [{0}]".format(code, reason))
-        self.io_stream.close()
+        if not self.io_stream.closed():
+            self.io_stream.close()
 
     def handle_forward(self, data):
         """

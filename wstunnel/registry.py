@@ -21,7 +21,7 @@ __author__ = 'fabio'
 logger = logging.getLogger(__name__)
 
 
-def get_reg_values(key, root_key=winreg.HKEY_LOCAL_MACHINE):
+def get_reg_values(key, root_key=winreg.HKEY_LOCAL_MACHINE):  # pragma: no cover
     """
     Given a key name, return a dictionary of its values.
     """
