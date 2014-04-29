@@ -236,7 +236,7 @@ License
 
 LGPLv3
 
-Copyright (c) 2013 Fabio Falcinelli <fabio.falcinelli@gmail.com>
+Copyright (c) 2014 Fabio Falcinelli <fabio.falcinelli@gmail.com>
 
 > This program is free software: you can redistribute it and/or modify
 > it under the terms of the GNU Lesser General Public License as published by

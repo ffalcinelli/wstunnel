@@ -26,7 +26,7 @@ from wstunnel.toolbox import hex_dump, random_free_port
 
 
 __author__ = 'fabio'
-ASYNC_TIMEOUT = 2
+ASYNC_TIMEOUT = 4
 #TODO: on windows, temporary files are not working so well...
 DELETE_TMPFILE = not sys.platform.startswith("win")
 fixture = os.path.join(os.path.dirname(__file__), "fixture")
@@ -69,6 +69,16 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         client = EchoClient(clt_tun.address_list[0])
         client.send_message(message, self.no_response)
         self.assertRaises(AssertionError, self.wait, timeout=ASYNC_TIMEOUT)
+
+    def test_no_client_ws_options(self):
+        """
+        Tests the client tunnel endpoint behaviour when there's no server counterpart
+        """
+        clt_tun = WSTunnelClient(family=socket.AF_INET,
+                                 io_loop=self.io_loop)
+        clt_tun.add_proxy("test", WebSocketProxy(port=0, ws_url="ws://localhost:{0}/test".format(random_free_port())))
+        clt_tun.start()
+        self.assertEqual(clt_tun.ws_options, {})
 
 
 class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):

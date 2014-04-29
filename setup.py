@@ -22,7 +22,7 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.2',
+              version='0.0.3',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',
@@ -38,6 +38,7 @@ kwargs = dict(name='wstunnel',
                   'Programming Language :: Python',
                   'Programming Language :: Python :: 2.7',
                   'Programming Language :: Python :: 3.3',
+                  'Programming Language :: Python :: 3.4',
                   'Topic :: Software Development :: Libraries :: Python Modules',
                   'Topic :: Utilities',
               ],
@@ -76,7 +77,7 @@ else:
                     # for the versioninfo resources
                     self.version = kwargs["version"]
                     self.company_name = "N.A."
-                    self.copyright = "Copyright (c) 2013 Fabio Falcinelli"
+                    self.copyright = "Copyright (c) 2014 Fabio Falcinelli"
                     self.name = kwargs["name"]
 
             tunclt_svc = Target(

@@ -173,7 +173,6 @@ if not sys.platform.startswith("win"):
             self.daemon = WSTunnelClientDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
 
-
     class WSTunnelServerDaemonTestCase(DaemonTestCase):
         """
         TestCase for the server tunnel endpoint in daemon mode
@@ -193,7 +192,6 @@ if not sys.platform.startswith("win"):
 
             self.daemon = WSTunnelServerDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
-
 
     class WSTunnelSSLClientDaemonTestCase(DaemonTestCase):
         """
@@ -215,7 +213,6 @@ if not sys.platform.startswith("win"):
 
             self.daemon = WSTunnelClientDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
-
 
     class WSTunnelSSLServerDaemonTestCase(DaemonTestCase):
         """
@@ -239,7 +236,6 @@ if not sys.platform.startswith("win"):
 
             self.daemon = WSTunnelServerDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
-
 
     class MainTestCase(unittest.TestCase):
         """
