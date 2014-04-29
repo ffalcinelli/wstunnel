@@ -60,7 +60,7 @@ class WebSocketProxy(TCPServer):
                   kwargs.get("backlog", 128))
 
         self.ws_url = ws_url
-        self.ws_options = kwargs.get("ws_options", None)
+        self.ws_options = kwargs.get("ws_options", {})
         self.filters = kwargs.get("filters", [])
         self.serving = False
 
@@ -180,7 +180,7 @@ class WSTunnelClient(object):
             "io_loop": io_loop,
             "ssl_options": ssl_options,
         }
-        self.ws_options = ws_options
+        self.ws_options = ws_options or {}
         self.proxies = {}
         self.serving = False
         self._num_proc = 1

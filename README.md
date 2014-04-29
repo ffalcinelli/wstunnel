@@ -1,5 +1,6 @@
-wstunnel [![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel) [![Coverage Status](https://coveralls.io/repos/ffalcinelli/wstunnel/badge.png)](https://coveralls.io/r/ffalcinelli/wstunnel) [![PyPI Version](https://pypip.in/v/wstunnel/badge.png)](https://crate.io/packages/wstunnel)	
-======================================================================================================================
+wstunnel 
+========
+[![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel)[![Coverage Status](https://coveralls.io/repos/ffalcinelli/wstunnel/badge.png)](https://coveralls.io/r/ffalcinelli/wstunnel)[![PyPI Version](https://pypip.in/v/wstunnel/badge.png)](https://crate.io/packages/wstunnel)	
 
 A WebSocket tunneling software written in python on top of [tornado](http://www.tornadoweb.org/) web framework for asynchronous I/O.
 
@@ -9,6 +10,9 @@ Currently works on
 * python 3.3
 
 both on unix (at least Fedora 18 and OSX) and Windows 7.
+
+Project Vistor's statistics: [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ffalcinelli/wstunnel/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
 
 Warnings
 ========
