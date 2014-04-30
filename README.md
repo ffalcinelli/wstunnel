@@ -4,14 +4,12 @@ wstunnel
 
 A WebSocket tunneling software written in python on top of [tornado](http://www.tornadoweb.org/) web framework for asynchronous I/O.
 
-Currently works on
+Currently works and tested on
 
 * python 2.7
 * python 3.3
 
 both on unix (at least Fedora 18 and OSX) and Windows 7.
-
-Project Vistor's statistics: [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ffalcinelli/wstunnel/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 
 Warnings
