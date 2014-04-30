@@ -16,9 +16,10 @@
 import logging
 import socket
 from tornado.httpserver import HTTPServer
-from tornado.iostream import IOStream
+from tornado.iostream import IOStream, StreamClosedError
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
+from wstunnel.exception import MappedServiceNotAvailableException
 from wstunnel.filters import FilterException
 from wstunnel.toolbox import random_free_port
 
@@ -53,12 +54,17 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from WebSocket, forward data to the service
         """
         try:
+            if not message:
+                msg = "No data received through websocket to reply to remote peer"
+                logger.warn(msg)
+                raise EOFError(msg)
+
             data = bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
             if data:
                 self.io_stream.write(data)
-        except FilterException as e:
+        except Exception as e:
             logger.exception(e)
             self.close()
 
@@ -79,6 +85,11 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from the service, send back to client through WebSocket
         """
         try:
+            if not message:
+                msg = "No data received from remote peer to reply through websocket"
+                logger.warn(msg)
+                raise EOFError(msg)
+
             data = bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)

@@ -26,7 +26,7 @@ from wstunnel.toolbox import hex_dump, random_free_port
 
 
 __author__ = 'fabio'
-ASYNC_TIMEOUT = 4
+ASYNC_TIMEOUT = 2
 #TODO: on windows, temporary files are not working so well...
 DELETE_TMPFILE = not sys.platform.startswith("win")
 fixture = os.path.join(os.path.dirname(__file__), "fixture")
@@ -39,6 +39,8 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
 
     def no_response(self, response):
         self.stop()
+        self.fail("Connection should be dropped without a response if an error happens")
+
 
     def test_no_ws_endpoint(self):
         """
@@ -51,7 +53,14 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         message = "Hello World!"
         client = EchoClient(clt_tun.address_list[0])
         client.send_message(message, self.no_response)
-        self.assertRaises(AssertionError, self.wait, timeout=ASYNC_TIMEOUT)
+        #self.wait(timeout=ASYNC_TIMEOUT)
+        with self.assertRaises(Exception):
+            try:
+                self.wait(timeout=ASYNC_TIMEOUT)
+            except Exception as e:
+                self.assertEqual(str(e),
+                                 "The server endpoint is not available, caused by HTTPError('HTTP 599: [Errno 61] Connection refused',))")
+                raise e
 
     def test_no_server_service(self):
         """
@@ -68,7 +77,13 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         message = "Hello World!"
         client = EchoClient(clt_tun.address_list[0])
         client.send_message(message, self.no_response)
-        self.assertRaises(AssertionError, self.wait, timeout=ASYNC_TIMEOUT)
+        with self.assertRaises(Exception):
+            try:
+                self.wait(timeout=ASYNC_TIMEOUT)
+            except Exception as e:
+                #print(e)
+                #self.assertEqual(str(e),)
+                raise e
 
     def test_no_client_ws_options(self):
         """

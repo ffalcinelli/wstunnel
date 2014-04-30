@@ -19,7 +19,8 @@ from tornado import httpclient
 from tornado.ioloop import IOLoop
 
 from tornado.tcpserver import TCPServer
-from tornado.websocket import WebSocketClientConnection
+from tornado.websocket import WebSocketClientConnection, tornado
+from wstunnel.exception import EndpointNotAvailableException
 from wstunnel.filters import FilterException
 
 __author__ = "fabio"
@@ -116,7 +117,11 @@ class WebSocketProxyConnection(object):
         connection
         """
         logger.debug("Connection with websocket established")
-        self.ws_conn = ws_conn.result()
+        try:
+            self.ws_conn = ws_conn.result()
+        except httpclient.HTTPError as e:
+            #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
+            raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
         self.ws_conn.on_message = self.handle_receive
         self.io_stream.read_until_close(self.handle_close, streaming_callback=self.handle_forward)
 
@@ -125,6 +130,11 @@ class WebSocketProxyConnection(object):
         On a message received from websocket, send back to client
         """
         try:
+            if not message:
+                msg = "No data received through websocket to send back to client peer"
+                logger.warn(msg)
+                raise EOFError(msg)
+
             data = bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
@@ -143,12 +153,17 @@ class WebSocketProxyConnection(object):
         if not self.io_stream.closed():
             self.io_stream.close()
 
-    def handle_forward(self, data):
+    def handle_forward(self, message):
         """
         On data received from client, forward through WebSocket
         """
         try:
-            data = bytes(data)
+            if not message:
+                msg = "No data received from client peer to forward through websocket"
+                logger.warn(msg)
+                raise EOFError(msg)
+
+            data = bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)
             if data:

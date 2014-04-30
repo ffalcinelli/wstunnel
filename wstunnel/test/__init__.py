@@ -68,7 +68,10 @@ class EchoClient():
     def send_message(self, message, handle_response):
         def handle_connect():
             self.io_stream.read_until_close(self.handle_close, handle_response)
-            self.io_stream.write(message)
+            m = message
+            if not isinstance(m, bytes):
+                m = m.encode("UTF-8")
+            self.io_stream.write(m)
 
         self.io_stream.connect(self.address, handle_connect)
 
