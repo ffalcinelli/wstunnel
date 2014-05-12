@@ -38,9 +38,9 @@ def websocket_connect(url, io_loop=None, callback=None, connect_timeout=None, **
 
     if io_loop is None:
         io_loop = IOLoop.current()
-    request = httpclient.HTTPRequest(url, connect_timeout=connect_timeout)
-    request = httpclient._RequestProxy(
-        request, options)
+    request = httpclient.HTTPRequest(url, connect_timeout=connect_timeout,
+                                     validate_cert=kwargs.get("validate_cert", True))
+    request = httpclient._RequestProxy(request, options)
     conn = WebSocketClientConnection(io_loop, request)
     if callback is not None:
         io_loop.add_future(conn.connect_future, callback)
@@ -104,19 +104,18 @@ class WebSocketProxyConnection(object):
         self.ws_conn = None
 
     def connect(self):
+        logger.info("Connecting WebSocket at url %s" % self.url)
         websocket_connect(self.url,
                           self.io_loop,
                           callback=self.opened,
                           connect_timeout=self.connect_timeout,
                           **self.ws_options)
 
-
     def opened(self, ws_conn):
         """
         When the websocket connection is handshaked, start reading for data over the client socket
         connection
         """
-        logger.debug("Connection with websocket established")
         try:
             self.ws_conn = ws_conn.result()
         except httpclient.HTTPError as e:
