@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 import socket
 import string
 import os
@@ -111,3 +112,20 @@ def get_config(appname="wstunneld", filename="wstunneld.yml"):
             if os.path.exists(conf_file):
                 return conf_file
     return None
+
+
+class EnhancedRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """
+    Same as the standard RotatingFileHandler, but creates directories containing filename if not existent.
+    """
+
+    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
+        log_dir = os.path.dirname(filename)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        super(EnhancedRotatingFileHandler, self).__init__(filename,
+                                                          mode=mode,
+                                                          maxBytes=maxBytes,
+                                                          backupCount=backupCount,
+                                                          encoding=encoding,
+                                                          delay=delay)

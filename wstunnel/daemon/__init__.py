@@ -20,11 +20,15 @@ import logging
 import time
 import os
 from tornado.ioloop import IOLoop
+from wstunnel.toolbox import EnhancedRotatingFileHandler
 from wstunnel.factory import create_ws_client_endpoint, create_ws_server_endpoint
 
 __author__ = 'fabio'
 SIG_NAMES = dict((k, v) for v, k in signal.__dict__.items() if v.startswith('SIG'))
 SHUTDOWN_POLL = 0.2
+
+#monkey patch the logging handler
+logging.handlers.RotatingFileHandler = EnhancedRotatingFileHandler
 
 
 class Daemon(object):
@@ -32,7 +36,7 @@ class Daemon(object):
     Handles common daemon operations: pid file, start/stop/restart commands
     """
 
-    def __init__(self, pid_file, user=None, workdir="/", umask=0):
+    def __init__(self, pid_file, user=None, workdir=".", umask=0):
         self.pid_file = pid_file
         self.user = user
         self.workdir = workdir if workdir else os.getcwd()

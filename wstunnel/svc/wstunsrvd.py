@@ -15,17 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+
+from tornado.ioloop import IOLoop
+import yaml
+
 import servicemanager
 import win32event
 import win32service
-
-from tornado.ioloop import IOLoop
 import win32serviceutil
-import yaml
-
 from wstunnel import winreg
 from wstunnel.factory import create_ws_server_endpoint
-from wstunnel.registry import get_reg_values
+from svc.registry import get_reg_values
+
 
 __author__ = 'fabio'
 WSTUNNELD_KEY = r"SOFTWARE\wstunneld"

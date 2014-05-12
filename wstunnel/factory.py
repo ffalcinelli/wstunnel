@@ -38,7 +38,7 @@ def create_ws_client_endpoint(config):
     Create a client endpoint parsing the configuration file options
     """
     ws_url = config["ws_url"]
-    srv = WSTunnelClient()
+    srv = WSTunnelClient(ws_options=config.get("ws_options", {}))
     proxies = config["proxies"]
     for resource, settings in proxies.items():
         filters = [load_filter(clazz) for clazz in config.get("filters", [])]
