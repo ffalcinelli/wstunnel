@@ -16,6 +16,7 @@
 import logging
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 
 try:
     import urlparse
@@ -57,7 +58,7 @@ string_type = type(u"")
 
 
 #monkey patch RotatingFileHandler
-class EnhancedRotatingFileHandler(logging.handlers.RotatingFileHandler):
+class EnhancedRotatingFileHandler(RotatingFileHandler):
     """
     Same as the standard RotatingFileHandler, but creates directories containing filename if not existent.
     """

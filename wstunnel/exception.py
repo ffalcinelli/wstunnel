@@ -1,4 +1,18 @@
-from wstunnel import PY2
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013  Fabio Falcinelli
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __author__ = 'fabio'
 
@@ -33,3 +47,12 @@ class MappedServiceNotAvailableException(ChainedException):
 
     def __init__(self, message="Mapped service is not available", *args, **kwargs):
         super(MappedServiceNotAvailableException, self).__init__(message, *args, **kwargs)
+
+
+class ConfigurationNotFoundException(ChainedException):
+    """
+    Exception raised when the yaml configuration cannot be found
+    """
+
+    def __init__(self, message="could not find configuration file", *args, **kwargs):
+        super(ConfigurationNotFoundException, self).__init__(message, *args, **kwargs)

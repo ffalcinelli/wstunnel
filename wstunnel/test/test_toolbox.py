@@ -18,10 +18,10 @@ import sys
 import unittest
 
 from tempfile import NamedTemporaryFile
-
+from wstunnel.exception import ConfigurationNotFoundException
 from wstunnel.factory import load_filter
 from wstunnel.filters import DumpFilter
-from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port
+from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port, get_config, printable
 
 __author__ = 'fabio'
 DELETE_TMP = not sys.platform.startswith("win")
@@ -58,6 +58,47 @@ class ToolBoxTestCase(unittest.TestCase):
         t = address_to_tuple(addr)
         self.assertEqual(t, (None, 443))
         self.assertEqual(addr, tuple_to_address(t))
+
+    def test_tuple_to_address_invalid_arg(self):
+        """
+        Tests the tuple to address conversion when a wrong argument is passed
+        """
+        with self.assertRaises(ValueError):
+            try:
+                tuple_to_address("WRONG")
+            except ValueError as e:
+                self.assertTrue(str(e).startswith("too many values to unpack"))
+                raise e
+
+    def test_tuple_to_address_empty_tuple(self):
+        """
+        Tests the tuple to address conversion when a tuple with empty values is passed
+        """
+        with self.assertRaises(ValueError):
+            try:
+                tuple_to_address((None, None))
+            except ValueError as e:
+                self.assertEqual("invalid argument passed: (None, None)", str(e))
+                raise e
+
+    def test_configuration_not_found(self):
+        """
+        Tests the behavoiur when a configuration file is not found
+        """
+        conf_file = "wstunneld.yml"
+        with self.assertRaises(Exception):
+            try:
+                get_config(filename=conf_file)
+            except ConfigurationNotFoundException as e:
+                self.assertTrue(str(e).startswith("cannot find file %s in dirs" % conf_file))
+                raise e
+
+    def test_printable_bytes(self):
+        """
+        Tests the visual representation of non printable character
+        """
+        b = bytes("\x00".encode("UTF-8"))
+        self.assertEqual(printable(b), b".")
 
     def test_hex_dump_unicode(self):
         """

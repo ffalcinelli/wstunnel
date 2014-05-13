@@ -13,7 +13,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import os
+import shutil
 import socket
+import sys
 from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
 from wstunnel.filters import BaseFilter, FilterException
@@ -98,3 +101,32 @@ class RaiseToWSFilter(BaseFilter):
 
     def socket_to_ws(self, data):
         raise FilterException(data)
+
+#TODO: on windows, temporary files are not working so well...
+DELETE_TMPFILE = not sys.platform.startswith("win")
+fixture = os.path.join(os.path.dirname(__file__), "fixture")
+
+
+def setup_logging():
+    """
+    Sets up the logging and PID files
+    """
+    log_file = os.path.join(fixture, "logs", "wstun_test_{0}.log".format(os.getpid()))
+    pid_file = os.path.join(fixture, "temp", "wstun_test_{0}.pid".format(os.getpid()))
+
+    for f in log_file, pid_file:
+        if os.path.exists(f):
+            os.remove(f)
+    return log_file, pid_file
+
+
+def clean_logging(files):
+    """
+    Cleans up logging and PID files
+    """
+    for f in files:
+        if os.path.exists(f):
+            os.remove(f)
+    for d in map(os.path.dirname, files):
+        if os.path.exists(d):
+            shutil.rmtree(d)

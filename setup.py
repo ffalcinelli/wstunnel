@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
 import sys
 from setuptools import setup, find_packages
 import wstunnel
@@ -22,7 +21,7 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.3',
+              version='0.0.4',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',

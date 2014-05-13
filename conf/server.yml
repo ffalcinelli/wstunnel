@@ -13,6 +13,7 @@ ssl: false
 ssl_options:
   certfile: null
   keyfile: null
+  #  ciphers: "AES128"
 
 # The pid file used to recognize if there's already a running instance
 pid_file: /tmp/wstunsrvd.pid
@@ -31,11 +32,11 @@ workdir: null
 proxies:
   /telnet:
     address: 192.168.1.2:13131
-    filters: [wstunnel.filters.DumpFilter]
+    filters: []
 
   /ftp:
     address: 192.168.1.2:21
-    filters: [wstunnel.filters.DumpFilter]
+    filters: []
 
   /ssh:
     address: 192.168.1.2:22

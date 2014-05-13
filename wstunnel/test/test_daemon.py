@@ -17,11 +17,9 @@ import shutil
 import unittest
 import sys
 import os
-
+from wstunnel.test import setup_logging, fixture, clean_logging
 
 __author__ = 'fabio'
-
-fixture = os.path.join(os.path.dirname(__file__), "fixture")
 
 if not sys.platform.startswith("win"):
     import mock
@@ -35,16 +33,8 @@ if not sys.platform.startswith("win"):
         TestCase for the generic Daemon super class
         """
 
-        def setup_logging(self):
-            self.log_file = os.path.join(fixture, "logs", "wstun_test_{0}.log".format(os.getpid()))
-            self.pid_file = os.path.join(fixture, "temp", "wstun_test_{0}.log".format(os.getpid()))
-
-            for f in self.log_file, self.pid_file:
-                if os.path.exists(f):
-                    os.remove(f)
-
         def setUp(self):
-            self.setup_logging()
+            self.log_file, self.pid_file = setup_logging()
             #open(self.log_file, 'w').close()
 
             self.daemon = Daemon(self.pid_file, workdir=fixture)
@@ -151,14 +141,7 @@ if not sys.platform.startswith("win"):
 
         def tearDown(self):
             self.daemon.shutdown()
-            for f in [self.log_file, self.pid_file]:
-                if os.path.exists(f):
-                    os.remove(f)
-            for d in map(os.path.dirname, [self.log_file, self.pid_file]):
-                if os.path.exists(d):
-                    print("Removing ", d)
-                    shutil.rmtree(d)
-
+            clean_logging([self.log_file, self.pid_file])
 
     class WSTunnelClientDaemonTestCase(DaemonTestCase):
         """
@@ -167,7 +150,7 @@ if not sys.platform.startswith("win"):
 
         def setUp(self):
             #super(WSTunnelClientDaemonTestCase, self).setUp()
-            self.setup_logging()
+            self.log_file, self.pid_file = setup_logging()
 
             with open(os.path.join(fixture, "wstuncltd.yml")) as f:
                 self.tun_conf = yaml.load(f.read())
@@ -194,7 +177,7 @@ if not sys.platform.startswith("win"):
 
         def setUp(self):
             # super(WSTunnelServerDaemonTestCase, self).setUp()
-            self.setup_logging()
+            self.log_file, self.pid_file = setup_logging()
 
             with open(os.path.join(fixture, "wstunsrvd.yml")) as f:
                 self.tun_conf = yaml.load(f.read())

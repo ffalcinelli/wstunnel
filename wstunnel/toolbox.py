@@ -17,6 +17,7 @@ import logging
 import socket
 import string
 import os
+from wstunnel.exception import ConfigurationNotFoundException
 from wstunnel import unichr
 
 __author__ = 'fabio'
@@ -62,7 +63,7 @@ def tuple_to_address(addr):
     elif port and not host:
         return port
     else:
-        return None
+        raise ValueError("invalid argument passed: %s" % str(addr))
 
 
 def hex_dump(buff, size=16):
@@ -111,4 +112,4 @@ def get_config(appname="wstunneld", filename="wstunneld.yml"):
             conf_file = os.path.join(conf_dir, filename)
             if os.path.exists(conf_file):
                 return conf_file
-    return None
+    raise ConfigurationNotFoundException("cannot find file %s in dirs %s" % (filename, str(path_list)))

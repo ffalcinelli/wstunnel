@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
-import sys
 from tempfile import NamedTemporaryFile
 import os
 from tornado.testing import AsyncTestCase, LogTrapTestCase
 from wstunnel.filters import DumpFilter, FilterException
-from wstunnel.test import EchoServer, EchoClient, RaiseFromWSFilter, RaiseToWSFilter
+from wstunnel.test import EchoServer, EchoClient, RaiseFromWSFilter, RaiseToWSFilter, setup_logging, clean_logging, \
+    fixture, DELETE_TMPFILE
 from wstunnel.client import WSTunnelClient, WebSocketProxy
 from wstunnel.server import WSTunnelServer
 from wstunnel.toolbox import hex_dump, random_free_port
@@ -27,15 +27,16 @@ from wstunnel.toolbox import hex_dump, random_free_port
 
 __author__ = 'fabio'
 ASYNC_TIMEOUT = 2
-#TODO: on windows, temporary files are not working so well...
-DELETE_TMPFILE = not sys.platform.startswith("win")
-fixture = os.path.join(os.path.dirname(__file__), "fixture")
 
 
 class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
     """
     TestCase for endpoints behaviour on various conditions
     """
+
+    def setUp(self):
+        super(WSEndpointsTestCase, self).setUp()
+        self.log_file, self.pid_file = setup_logging()
 
     def no_response(self, response):
         self.stop()
@@ -95,6 +96,10 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         clt_tun.start()
         self.assertEqual(clt_tun.ws_options, {})
 
+    def tearDown(self):
+        super(WSEndpointsTestCase, self).tearDown()
+        clean_logging([self.log_file, self.pid_file])
+
 
 class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
     """
@@ -103,6 +108,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
 
     def setUp(self):
         super(WSTunnelTestCase, self).setUp()
+        self.log_file, self.pid_file = setup_logging()
         self.srv = EchoServer(port=0,
                               address="127.0.0.1")
         self.srv.start(1)
@@ -126,6 +132,8 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
             srv.stop()
 
         super(WSTunnelTestCase, self).tearDown()
+        clean_logging([self.log_file, self.pid_file])
+
 
     def on_response_received(self, response):
         """
@@ -154,6 +162,7 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         """
         Test the installing of a dump filter into client endpoint
         """
+        setup_logging()
         with NamedTemporaryFile(delete=DELETE_TMPFILE) as logf:
             client_filter = DumpFilter(handler={"filename": logf.name})
             self.clt_tun.install_filter(client_filter)
@@ -238,6 +247,7 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
 
     def setUp(self):
         super(WSTunnelSSLTestCase, self).setUp()
+        self.log_file, self.pid_file = setup_logging()
         self.srv = EchoServer(port=0, address="127.0.0.1")
         self.srv.start()
         self.srv_tun = WSTunnelServer(port=0,

@@ -3,6 +3,14 @@
 endpoint: client
 ws_url: ws://localhost:9000/
 
+# use this section to provide options for the websocket connection, in particular
+# on SSL connection
+# e.g. turn off certificate validation using
+# validate_cert: no
+ws_options:
+   #ciphers: "AES128"
+   #validate_cert: false
+
 # The pid file used to recognize if there's already a running instance
 pid_file: /tmp/wstuncltd.pid
 

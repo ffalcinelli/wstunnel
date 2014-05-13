@@ -17,9 +17,12 @@ import logging
 from logging import config
 
 import copy
+import sys
 import yaml
-
+from wstunnel import EnhancedRotatingFileHandler
 from wstunnel.toolbox import hex_dump
+
+logging.handlers.RotatingFileHandler = EnhancedRotatingFileHandler
 
 __author__ = 'fabio'
 
@@ -97,9 +100,17 @@ class DumpFilter(BaseFilter):
         self.logger = logging.getLogger(__name__)
 
     def ws_to_socket(self, data, **kwargs):
-        self.logger.info("[-->] From WebSocket endpoint\n{}".format(hex_dump(data)))
+        try:
+            self.logger.info("[-->] From WebSocket endpoint\n{}".format(hex_dump(data)))
+        except Exception as e:
+            #Ignore errors... DumpFilter should not interpose the protocol flow
+            sys.stderr.write("Unable to log filter dump: %s" % str(e))
         return data
 
     def socket_to_ws(self, data, **kwargs):
-        self.logger.info("[<--] To WebSocket endpoint\n{}".format(hex_dump(data)))
+        try:
+            self.logger.info("[<--] To WebSocket endpoint\n{}".format(hex_dump(data)))
+        except Exception as e:
+            #Ignore errors... DumpFilter should not interpose the protocol flow
+            sys.stderr.write("Unable to log filter dump: %s" % str(e))
         return data
