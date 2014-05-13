@@ -47,12 +47,3 @@ class MappedServiceNotAvailableException(ChainedException):
 
     def __init__(self, message="Mapped service is not available", *args, **kwargs):
         super(MappedServiceNotAvailableException, self).__init__(message, *args, **kwargs)
-
-
-class ConfigurationNotFoundException(ChainedException):
-    """
-    Exception raised when the yaml configuration cannot be found
-    """
-
-    def __init__(self, message="could not find configuration file", *args, **kwargs):
-        super(ConfigurationNotFoundException, self).__init__(message, *args, **kwargs)

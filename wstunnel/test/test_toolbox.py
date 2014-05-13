@@ -18,7 +18,6 @@ import sys
 import unittest
 
 from tempfile import NamedTemporaryFile
-from wstunnel.exception import ConfigurationNotFoundException
 from wstunnel.factory import load_filter
 from wstunnel.filters import DumpFilter
 from wstunnel.toolbox import address_to_tuple, tuple_to_address, hex_dump, random_free_port, get_config, printable
@@ -85,13 +84,7 @@ class ToolBoxTestCase(unittest.TestCase):
         """
         Tests the behavoiur when a configuration file is not found
         """
-        conf_file = "wstunneld.yml"
-        with self.assertRaises(Exception):
-            try:
-                get_config(filename=conf_file)
-            except ConfigurationNotFoundException as e:
-                self.assertTrue(str(e).startswith("cannot find file %s in dirs" % conf_file))
-                raise e
+        self.assertIsNone(get_config(filename="wstunneld.yml"))
 
     def test_printable_bytes(self):
         """

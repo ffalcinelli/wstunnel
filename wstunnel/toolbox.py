@@ -13,11 +13,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
 import socket
 import string
 import os
-from wstunnel.exception import ConfigurationNotFoundException
 from wstunnel import unichr
 
 __author__ = 'fabio'
@@ -112,4 +110,4 @@ def get_config(appname="wstunneld", filename="wstunneld.yml"):
             conf_file = os.path.join(conf_dir, filename)
             if os.path.exists(conf_file):
                 return conf_file
-    raise ConfigurationNotFoundException("cannot find file %s in dirs %s" % (filename, str(path_list)))
+    return None
