@@ -75,7 +75,7 @@ class WebSocketProxy(TCPServer):
         """
         logger.info("Got connection from {0}:{1}".format(*address))
         ws = WebSocketProxyConnection(self.ws_url, stream, address, filters=self.filters, ws_options=self.ws_options)
-        logger.debug("Connecting to WebSocket endpoint at {}".format(self.ws_url))
+        logger.info("Connecting to WebSocket endpoint at {}".format(self.ws_url))
         ws.connect()
 
     def start(self, num_processes=1):
@@ -148,7 +148,7 @@ class WebSocketProxyConnection(object):
         """
         When WebSocket gets closed, close the client socket too
         """
-        logger.debug("Connection with websocket has been closed: reason {1} [{0}]".format(code, reason))
+        logger.info("Connection with websocket has been closed: reason {1} [{0}]".format(code, reason))
         if not self.io_stream.closed():
             self.io_stream.close()
 
@@ -176,7 +176,7 @@ class WebSocketProxyConnection(object):
         """
         Handles the close event from the client socket
         """
-        logger.debug("Closing connection with client at {0}:{1}".format(*self.address))
+        logger.info("Closing connection with client at {0}:{1}".format(*self.address))
         self.close(code=2020, reason="Client disconnected")
 
 
@@ -186,7 +186,7 @@ class WSTunnelClient(object):
     """
 
     def __init__(self, proxies=None, address='', family=socket.AF_UNSPEC, io_loop=None, ssl_options=None,
-                 ws_options=None, **kwargs):
+                 ws_options=None):
 
         self.stream_options = {
             "address": address,
@@ -195,12 +195,14 @@ class WSTunnelClient(object):
             "ssl_options": ssl_options,
         }
         self.ws_options = ws_options or {}
-        self.proxies = {}
+        self.proxies = proxies or {}
         self.serving = False
         self._num_proc = 1
         if proxies:
             for port, ws_url in proxies.items():
-                self.add_proxy(port, WebSocketProxy(port=port, ws_url=ws_url, ws_options=self.ws_options,
+                self.add_proxy(port, WebSocketProxy(port=port,
+                                                    ws_url=ws_url,
+                                                    ws_options=self.ws_options,
                                                     **self.stream_options))
 
     def add_proxy(self, key, ws_proxy):
@@ -208,7 +210,7 @@ class WSTunnelClient(object):
         Adds a proxy to the list.
         If the tunnel is serving connection, the proxy it gets started.
         """
-        logger.debug("Adding {0} as proxy for {1}".format(ws_proxy, key))
+        logger.info("Adding {0} as proxy for {1}".format(ws_proxy, key))
         self.proxies[key] = ws_proxy
         if self.serving:
             ws_proxy.start(self._num_proc)
@@ -218,7 +220,7 @@ class WSTunnelClient(object):
         Removes a proxy from the list.
         If the tunnel is serving connection, the proxy it gets stopped.
         """
-        logger.debug("Removing proxy on {0}".format(key))
+        logger.info("Removing proxy on {0}".format(key))
         ws_proxy = self.proxies.get(key)
         if ws_proxy:
             if self.serving:

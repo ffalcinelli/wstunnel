@@ -206,9 +206,9 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         #TODO: this generically catch assertion errors... We should get the inner FilterException in some way
         self.assertRaises(AssertionError, self.wait, timeout=1)
 
-    def test_add_get_remove_proxy(self):
+    def test_add_get_remove_client_proxy(self):
         """
-        Tests adding/remove/get operations
+        Tests adding/remove/get operations on client proxies
         """
         ws_proxy = WebSocketProxy(port=0, ws_url="ws://localhost:9000/test_add_remove")
         self.assertFalse(ws_proxy.serving)
@@ -217,6 +217,18 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.assertTrue(ws_proxy.serving)
         self.clt_tun.remove_proxy("test_add_remove")
         self.assertFalse(ws_proxy.serving)
+
+    def test_add_get_remove_server_proxy(self):
+        """
+        Tests adding/remove/get operations on server proxies
+        """
+        ws_proxies = {"/test": ("127.0.0.1", random_free_port())}
+        for key, address in ws_proxies.items():
+            self.srv_tun.add_proxy(key, address)
+            self.assertEqual(address, self.srv_tun.get_proxy(key))
+            self.assertEqual(1, len(self.srv_tun.proxies))
+            self.srv_tun.remove_proxy(key)
+            self.assertEqual(0, len(self.srv_tun.proxies))
 
 
 class WSTunnelSSLTestCase(WSTunnelTestCase):

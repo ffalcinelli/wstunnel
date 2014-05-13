@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import shutil
 import unittest
 import sys
 import os
@@ -34,17 +35,17 @@ if not sys.platform.startswith("win"):
         TestCase for the generic Daemon super class
         """
 
-        def setUp(self):
+        def setup_logging(self):
             self.log_file = os.path.join(fixture, "logs", "wstun_test_{0}.log".format(os.getpid()))
             self.pid_file = os.path.join(fixture, "temp", "wstun_test_{0}.log".format(os.getpid()))
 
             for f in self.log_file, self.pid_file:
-                if not os.path.exists(os.path.dirname(f)):
-                    os.makedirs(os.path.dirname(f))
-                elif os.path.exists(f):
+                if os.path.exists(f):
                     os.remove(f)
 
-            open(self.log_file, 'w').close()
+        def setUp(self):
+            self.setup_logging()
+            #open(self.log_file, 'w').close()
 
             self.daemon = Daemon(self.pid_file, workdir=fixture)
             self.daemon.hush = lambda **kwargs: 0
@@ -99,6 +100,8 @@ if not sys.platform.startswith("win"):
             """
             Test daemon started when another instance is running
             """
+            if not os.path.exists(os.path.dirname(self.pid_file)):
+                os.makedirs(os.path.dirname(self.pid_file))
             with open(self.pid_file, "w") as pid:
                 pid.write(str(os.getpid()) + "\n")
 
@@ -148,9 +151,13 @@ if not sys.platform.startswith("win"):
 
         def tearDown(self):
             self.daemon.shutdown()
-            for f in self.log_file, self.pid_file:
+            for f in [self.log_file, self.pid_file]:
                 if os.path.exists(f):
                     os.remove(f)
+            for d in map(os.path.dirname, [self.log_file, self.pid_file]):
+                if os.path.exists(d):
+                    print("Removing ", d)
+                    shutil.rmtree(d)
 
 
     class WSTunnelClientDaemonTestCase(DaemonTestCase):
@@ -159,7 +166,8 @@ if not sys.platform.startswith("win"):
         """
 
         def setUp(self):
-            super(WSTunnelClientDaemonTestCase, self).setUp()
+            #super(WSTunnelClientDaemonTestCase, self).setUp()
+            self.setup_logging()
 
             with open(os.path.join(fixture, "wstuncltd.yml")) as f:
                 self.tun_conf = yaml.load(f.read())
@@ -173,13 +181,20 @@ if not sys.platform.startswith("win"):
             self.daemon = WSTunnelClientDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
 
+        def test_create_logging_directory(self):
+            """
+            Tests automatic creation of logging directory through monkey patch on RotatingFileHandler
+            """
+            self.assertTrue(os.path.exists(os.path.dirname(self.log_file)))
+
     class WSTunnelServerDaemonTestCase(DaemonTestCase):
         """
         TestCase for the server tunnel endpoint in daemon mode
         """
 
         def setUp(self):
-            super(WSTunnelServerDaemonTestCase, self).setUp()
+            # super(WSTunnelServerDaemonTestCase, self).setUp()
+            self.setup_logging()
 
             with open(os.path.join(fixture, "wstunsrvd.yml")) as f:
                 self.tun_conf = yaml.load(f.read())
@@ -192,6 +207,12 @@ if not sys.platform.startswith("win"):
 
             self.daemon = WSTunnelServerDaemon(self.tun_conf)
             self.daemon.hush = lambda **kwargs: 0
+
+        def test_create_logging_directory(self):
+            """
+            Tests automatic creation of logging directory through monkey patch on RotatingFileHandler
+            """
+            self.assertTrue(os.path.exists(os.path.dirname(self.log_file)))
 
     class WSTunnelSSLClientDaemonTestCase(DaemonTestCase):
         """

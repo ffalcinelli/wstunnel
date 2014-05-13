@@ -119,7 +119,7 @@ class WebSocketProxyHandler(WebSocketHandler):
 class WSTunnelServer(object):
     """
     WebSocket tunnel remote endpoint.
-    Handles several proxy services on different urls
+    Handles several proxy services on different paths
     """
 
     def __init__(self, port=0, address='', proxies=None, io_loop=None, ssl_options=None, **kwargs):
@@ -150,7 +150,7 @@ class WSTunnelServer(object):
         self.proxies[key] = ws_proxy
 
     def remove_proxy(self, key):
-        logger.debug("Removing proxy on {1}".format(key))
+        logger.debug("Removing proxy on {0}".format(key))
         del self.proxies[key]
 
     def get_proxy(self, key):

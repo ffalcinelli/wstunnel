@@ -20,15 +20,11 @@ import logging
 import time
 import os
 from tornado.ioloop import IOLoop
-from wstunnel.toolbox import EnhancedRotatingFileHandler
 from wstunnel.factory import create_ws_client_endpoint, create_ws_server_endpoint
 
 __author__ = 'fabio'
 SIG_NAMES = dict((k, v) for v, k in signal.__dict__.items() if v.startswith('SIG'))
 SHUTDOWN_POLL = 0.2
-
-#monkey patch the logging handler
-logging.handlers.RotatingFileHandler = EnhancedRotatingFileHandler
 
 
 class Daemon(object):
@@ -95,6 +91,16 @@ class Daemon(object):
         """
         signal.signal(signal.SIGTERM, self._gracefully_terminate)
 
+    def _write_pid_file(self):
+        """
+        Writes Process ID into pid file
+        """
+        if not os.path.exists(os.path.dirname(self.pid_file)):
+            os.makedirs(os.path.dirname(self.pid_file))
+
+        with open(self.pid_file, 'w+') as f:
+            f.write(str(os.getpid()) + '\n')
+
     def daemonize(self):
         """
         Daemonizes the process with the double fork hack
@@ -118,8 +124,7 @@ class Daemon(object):
 
             self.register_shutdown()
 
-            with open(self.pid_file, 'w+') as f:
-                f.write(str(os.getpid()) + '\n')
+            self._write_pid_file()
 
         except OSError as oserr:
             sys.stderr.write("Daemonize {0} failed: {1}\n".format(self.name, oserr))
