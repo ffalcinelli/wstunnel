@@ -21,7 +21,7 @@ import wstunnel
 __author__ = 'fabio'
 
 kwargs = dict(name='wstunnel',
-              version='0.0.5',
+              version='0.0.6',
               description='A Python WebSocket Tunnel',
               author='Fabio Falcinelli',
               author_email='fabio.falcinelli@gmail.com',

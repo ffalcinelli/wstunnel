@@ -65,8 +65,12 @@ logging:
 
   loggers:
     wstunnel.client:
-      level: DEBUG
-      handlers: [console]
+      level: INFO
+      handlers: [file_handler]
+      propagate: yes
+    tornado.general:
+      level: WARNING
+      handlers: [file_handler]
       propagate: yes
 
   root:

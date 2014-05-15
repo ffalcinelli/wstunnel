@@ -32,7 +32,7 @@ workdir: null
 proxies:
   /telnet:
     address: 192.168.1.2:13131
-    filters: []
+    filters: [wstunnel.filters.DumpFilter]
 
   /ftp:
     address: 192.168.1.2:21
@@ -67,16 +67,14 @@ logging:
       encoding: utf8
 
   loggers:
-
     wstunnel.server:
-      level: DEBUG
-      handlers: [console]
-      propagate: no
-
+      level: INFO
+      handlers: [file_handler]
+      propagate: yes
     tornado.general:
       level: WARNING
       handlers: [file_handler]
-      propagate: no
+      propagate: yes
 
   root:
     level: INFO
