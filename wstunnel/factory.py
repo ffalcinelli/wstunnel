@@ -44,8 +44,9 @@ def create_ws_client_endpoint(config):
         filters = [load_filter(clazz) for clazz in config.get("filters", [])]
 
         srv.add_proxy(key=settings["port"],
-                      ws_proxy=WebSocketProxy(port=int(settings["port"]),
-                                              ws_url=join_url(ws_url, resource),
+                      ws_proxy=WebSocketProxy(  #address=settings.get("address", ''),
+                                                port=int(settings.get("port", 0)),
+                                                ws_url=join_url(ws_url, resource),
                                               filters=filters,
                                               ws_options=config.get("ws_options", {})))
     return srv

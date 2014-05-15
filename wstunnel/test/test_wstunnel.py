@@ -142,6 +142,13 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.assertEqual(self.message.upper(), response)
         self.stop()
 
+    def on_response_resend(self, response):
+        """
+        Callback invoked when response is received. It resends the message, so that there will be an infinite loop.
+        """
+        self.assertEqual(self.message.upper(), response)
+        self.client.send_message(self.message, handle_response=self.on_response_received)
+
     def test_request_response(self):
         """
         Test a simple request/response chat through the websocket tunnel
@@ -238,6 +245,38 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
             self.assertEqual(1, len(self.srv_tun.proxies))
             self.srv_tun.remove_proxy(key)
             self.assertEqual(0, len(self.srv_tun.proxies))
+
+    def test_server_peer_connection_drop_issue_6(self):
+        """
+        Tests dropping peer connection server side. This test addresses issue #6
+        """
+
+        def on_close(*args):
+            raise Exception("CLOSED")
+
+        self.client.handle_close = on_close
+        self.client.send_message(self.message, handle_response=self.on_response_resend)
+        self.srv.stop()
+        try:
+            self.wait(timeout=ASYNC_TIMEOUT)
+        except Exception as e:
+            self.assertEqual("CLOSED", str(e))
+
+    def test_server_tunnel_connection_drop(self):
+        """
+        Tests dropping connection server side by shutting down the WebSocket tunnel server
+        """
+
+        def on_close(*args):
+            raise Exception("CLOSED")
+
+        self.client.handle_close = on_close
+        self.client.send_message(self.message, handle_response=self.on_response_resend)
+        self.srv_tun.stop()
+        try:
+            self.wait(timeout=ASYNC_TIMEOUT)
+        except Exception as e:
+            self.assertEqual("CLOSED", str(e))
 
 
 class WSTunnelSSLTestCase(WSTunnelTestCase):

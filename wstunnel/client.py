@@ -19,7 +19,8 @@ from tornado import httpclient
 from tornado.ioloop import IOLoop
 
 from tornado.tcpserver import TCPServer
-from tornado.websocket import WebSocketClientConnection, tornado
+from tornado.websocket import WebSocketClientConnection
+from wstunnel.toolbox import tuple_to_address
 from wstunnel.exception import EndpointNotAvailableException
 from wstunnel.filters import FilterException
 
@@ -57,34 +58,43 @@ class WebSocketProxy(TCPServer):
                                              kwargs.get("ssl_options"))
         self.bind(port,
                   kwargs.get("address", ''),
-                  kwargs.get("family", socket.AF_INET),
+                  kwargs.get("family", socket.AF_UNSPEC),
                   kwargs.get("backlog", 128))
 
         self.ws_url = ws_url
         self.ws_options = kwargs.get("ws_options", {})
         self.filters = kwargs.get("filters", [])
         self.serving = False
+        self.ws_conn = None
+        self._address_list = []
 
     @property
     def address_list(self):
-        return [(s.getsockname()[0], s.getsockname()[1]) for s in self._sockets.values()]
+        return self._address_list
 
     def handle_stream(self, stream, address):
         """
         Handle a new client connection with a proxy over websocket
         """
-        logger.info("Got connection from {0}:{1}".format(*address))
-        ws = WebSocketProxyConnection(self.ws_url, stream, address, filters=self.filters, ws_options=self.ws_options)
-        logger.info("Connecting to WebSocket endpoint at {}".format(self.ws_url))
-        ws.connect()
+        logger.info("Got connection from %s on %s" % (tuple_to_address(stream.socket.getpeername()),
+                                                      tuple_to_address(stream.socket.getsockname())))
+        self.ws_conn = WebSocketProxyConnection(self.ws_url, stream, address,
+                                                filters=self.filters,
+                                                ws_options=self.ws_options)
+        self.ws_conn.connect()
 
     def start(self, num_processes=1):
         super(WebSocketProxy, self).start(num_processes)
+        self._address_list = [(s.getsockname()[0], s.getsockname()[1]) for s in self._sockets.values()]
         self.serving = True
 
     def stop(self):
         super(WebSocketProxy, self).stop()
         self.serving = False
+
+    def __str__(self):
+        return "WebSocketProxy %s" % (" | ".join(["%s --> %s" %
+                                                  ("%s:%d" % (a, p), self.ws_url) for (a, p) in self.address_list]))
 
 
 class WebSocketProxyConnection(object):
@@ -100,18 +110,18 @@ class WebSocketProxyConnection(object):
         self.ws_options = ws_options
         self.io_stream, self.address = io_stream, address
         self.filters = kwargs.get("filters", [])
-        self.io_stream.set_close_callback(self.handle_close)
+        self.io_stream.set_close_callback(self.on_close)
         self.ws_conn = None
 
     def connect(self):
         logger.info("Connecting WebSocket at url %s" % self.url)
         websocket_connect(self.url,
                           self.io_loop,
-                          callback=self.opened,
+                          callback=self.on_open,
                           connect_timeout=self.connect_timeout,
                           **self.ws_options)
 
-    def opened(self, ws_conn):
+    def on_open(self, ws_conn):
         """
         When the websocket connection is handshaked, start reading for data over the client socket
         connection
@@ -121,63 +131,46 @@ class WebSocketProxyConnection(object):
         except httpclient.HTTPError as e:
             #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
             raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
-        self.ws_conn.on_message = self.handle_receive
-        self.io_stream.read_until_close(self.handle_close, streaming_callback=self.handle_forward)
+        self.ws_conn.on_message = self.on_message
+        self.ws_conn.release_callback = self.on_close
+        self.io_stream.read_until_close(self.on_close, streaming_callback=self.on_peer_message)
 
-    def handle_receive(self, message):
+    def on_message(self, message):
         """
-        On a message received from websocket, send back to client
+        On a message received from websocket, send back to client peer
         """
         try:
-            if not message:
-                msg = "No data received through websocket to send back to client peer"
-                logger.warn(msg)
-                raise EOFError(msg)
-
-            data = bytes(message)
+            data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
             if data:
                 self.io_stream.write(data)
         except FilterException as e:
             logger.exception(e)
-            #TODO: define better codes
-            self.close(code=2022, reason=e)
+            self.on_close()
 
-    def close(self, code, reason=None):
+    def on_close(self, *args, **kwargs):
         """
-        When WebSocket gets closed, close the client socket too
+        Handles the close event from the client socket
         """
-        logger.info("Connection with websocket has been closed: reason {1} [{0}]".format(code, reason))
+        logger.info("Closing connection with client at {0}:{1}".format(*self.address))
+        logger.debug("Received args %s and %s", args, kwargs)
         if not self.io_stream.closed():
             self.io_stream.close()
 
-    def handle_forward(self, message):
+    def on_peer_message(self, message):
         """
-        On data received from client, forward through WebSocket
+        On data received from client peer, forward through WebSocket
         """
         try:
-            if not message:
-                msg = "No data received from client peer to forward through websocket"
-                logger.warn(msg)
-                raise EOFError(msg)
-
-            data = bytes(message)
+            data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)
             if data:
                 self.ws_conn.write_message(data, binary=True)
         except FilterException as e:
             logger.exception(e)
-            #TODO: define better codes
-            self.close(code=2021, reason=e)
-
-    def handle_close(self):
-        """
-        Handles the close event from the client socket
-        """
-        logger.info("Closing connection with client at {0}:{1}".format(*self.address))
-        self.close(code=2020, reason="Client disconnected")
+            self.on_close()
 
 
 class WSTunnelClient(object):
@@ -210,21 +203,21 @@ class WSTunnelClient(object):
         Adds a proxy to the list.
         If the tunnel is serving connection, the proxy it gets started.
         """
-        logger.info("Adding {0} as proxy for {1}".format(ws_proxy, key))
         self.proxies[key] = ws_proxy
         if self.serving:
             ws_proxy.start(self._num_proc)
+            logger.info("Started %s" % ws_proxy)
 
     def remove_proxy(self, key):
         """
         Removes a proxy from the list.
         If the tunnel is serving connection, the proxy it gets stopped.
         """
-        logger.info("Removing proxy on {0}".format(key))
         ws_proxy = self.proxies.get(key)
         if ws_proxy:
             if self.serving:
                 ws_proxy.stop()
+                logger.info("Removing %s" % ws_proxy)
             del self.proxies[key]
 
     def get_proxy(self, key):
@@ -261,11 +254,11 @@ class WSTunnelClient(object):
         """
         Start the client tunnel service by starting each configured proxy
         """
-        logger.info("Starting {0} {1} processes".format(num_processes, self.__class__.__name__))
+        logger.info("Starting %d %s processes" % (num_processes, self.__class__.__name__))
         self._num_processes = num_processes
         for key, ws_proxy in self.proxies.items():
-            logger.debug("Starting proxy on {}".format(key))
             ws_proxy.start(num_processes)
+            logger.info("Started %s" % ws_proxy)
             self.serving = True
 
     def stop(self):
@@ -274,6 +267,6 @@ class WSTunnelClient(object):
         """
         logger.info("Stopping {}".format(self.__class__.__name__))
         for key, ws_proxy in self.proxies.items():
-            logger.debug("Stopping proxy on {}".format(key))
             ws_proxy.stop()
+            logger.info("Stopped %s" % ws_proxy)
         self.serving = False

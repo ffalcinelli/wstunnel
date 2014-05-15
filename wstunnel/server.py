@@ -16,12 +16,11 @@
 import logging
 import socket
 from tornado.httpserver import HTTPServer
-from tornado.iostream import IOStream, StreamClosedError
+from tornado.iostream import IOStream
 from tornado.web import Application
 from tornado.websocket import WebSocketHandler
-from wstunnel.exception import MappedServiceNotAvailableException
 from wstunnel.filters import FilterException
-from wstunnel.toolbox import random_free_port
+from wstunnel.toolbox import random_free_port, tuple_to_address
 
 __author__ = 'fabio'
 
@@ -39,27 +38,21 @@ class WebSocketProxyHandler(WebSocketHandler):
                                                 kwargs.get("type", socket.SOCK_STREAM),
                                                 0))
         self.filters = kwargs.get("filters", [])
-        self.io_stream.set_close_callback(self.handle_close)
+        self.io_stream.set_close_callback(self.on_close)
 
     def open(self):
         """
         Open the connection to the service when the WebSocket connection has been established
         """
-        logger.debug("WebSocket connection established")
-        logger.debug("Forwarding connection to server {0}:{1}".format(*self.remote_address))
-        self.io_stream.connect(self.remote_address, self.handle_connect)
+        logger.info("Forwarding connection to server %s" % tuple_to_address(self.remote_address))
+        self.io_stream.connect(self.remote_address, self.on_connect)
 
     def on_message(self, message):
         """
         On message received from WebSocket, forward data to the service
         """
         try:
-            if not message:
-                msg = "No data received through websocket to reply to remote peer"
-                logger.warn(msg)
-                raise EOFError(msg)
-
-            data = bytes(message)
+            data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
             if data:
@@ -68,52 +61,39 @@ class WebSocketProxyHandler(WebSocketHandler):
             logger.exception(e)
             self.close()
 
-    def on_close(self):
+    def on_close(self, *args, **kwargs):
         """
         When web socket gets closed, close the connection to the service too
         """
-        logger.debug("Closing WebSocket")
-        if not self.io_stream._closed:
+        logger.info("Closing connection with peer at %s" % tuple_to_address(self.remote_address))
+        logger.debug("Received args %s and %s", args, kwargs)
+        #if not self.io_stream._closed:
+        for message in args:
+            self.on_peer_message(message)
+        if not self.io_stream.closed():
             self.io_stream.close()
+        self.close()
 
-    def handle_connect(self):
-        logger.debug("Connection established with peer at {0}:{1}".format(*self.remote_address))
-        self.io_stream.read_until_close(self.handle_close, self.handle_reply)
-
-    def handle_reply(self, message):
+    def on_connect(self):
         """
-        On message received from the service, send back to client through WebSocket
+        Callback invoked on connection with mapped service
+        """
+        logger.info("Connection established with peer at %s" % tuple_to_address(self.remote_address))
+        self.io_stream.read_until_close(self.on_close, self.on_peer_message)
+
+    def on_peer_message(self, message):
+        """
+        On message received from peer service, send back to client through WebSocket
         """
         try:
-            if not message:
-                msg = "No data received from remote peer to reply through websocket"
-                logger.warn(msg)
-                raise EOFError(msg)
-
-            data = bytes(message)
+            data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)
             if data:
                 self.write_message(data, binary=True)
         except FilterException as e:
             logger.exception(e)
-            self.close()
-
-    def handle_close(self, data=None):
-        """
-        Handles the close event of the service
-        """
-        logger.debug("Closing connection with peer at {0}:{1}".format(*self.remote_address))
-        if data:
-            logger("Additional data: {}".format(data))
-        self.close()
-
-    def close(self):
-        """
-        Handles closing the websocket
-        """
-        if self.ws_connection:
-            super(WebSocketProxyHandler, self).close()
+            self.on_close()
 
 
 class WSTunnelServer(object):
@@ -146,11 +126,11 @@ class WSTunnelServer(object):
         self._port = value if value else random_free_port()
 
     def add_proxy(self, key, ws_proxy):
-        logger.debug("Adding {0} as proxy for {1}".format(ws_proxy, key))
+        logger.info("Adding {0} as proxy for {1}".format(ws_proxy, key))
         self.proxies[key] = ws_proxy
 
     def remove_proxy(self, key):
-        logger.debug("Removing proxy on {0}".format(key))
+        logger.info("Removing proxy on {0}".format(key))
         del self.proxies[key]
 
     def get_proxy(self, key):
