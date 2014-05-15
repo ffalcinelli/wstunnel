@@ -17,7 +17,6 @@ import os
 import shutil
 import socket
 import sys
-from time import sleep
 from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
 from wstunnel.filters import BaseFilter, FilterException
@@ -73,22 +72,14 @@ class EchoClient(object):
     def send_message(self, message, handle_response):
         def handle_connect():
             self.io_stream.read_until_close(self.handle_close, handle_response)
-            m = message
-            if not isinstance(m, bytes):
-                m = m.encode("UTF-8")
-            self.io_stream.write(m)
+            self.write(message)
+
         self.io_stream.connect(self.address, handle_connect)
 
-        # def send_message_forever(self, message, handle_response, delay=0.5):
-        #     def handle_connect():
-        #         self.io_stream.read_until_close(self.handle_close, handle_response)
-        #         while True:
-        #             m = message
-        #             if not isinstance(m, bytes):
-        #                 m = m.encode("UTF-8")
-        #             self.io_stream.write(m)
-        #             sleep(delay)
-        #     self.io_stream.connect(self.address, handle_connect)
+    def write(self, message):
+        if not isinstance(message, bytes):
+            message = message.encode("UTF-8")
+        self.io_stream.write(message)
 
 
 class RaiseFromWSFilter(BaseFilter):
