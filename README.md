@@ -1,6 +1,6 @@
 wstunnel 
 ========
-[![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel)[![Coverage Status](https://coveralls.io/repos/ffalcinelli/wstunnel/badge.png)](https://coveralls.io/r/ffalcinelli/wstunnel)[![PyPI Version](https://pypip.in/v/wstunnel/badge.png)](https://crate.io/packages/wstunnel)	
+[![Build Status](https://travis-ci.org/ffalcinelli/wstunnel.png)](https://travis-ci.org/ffalcinelli/wstunnel)[![Coverage Status](https://coveralls.io/repos/ffalcinelli/wstunnel/badge.png)](https://coveralls.io/r/ffalcinelli/wstunnel)[![PyPI Version](https://img.shields.io/pypi/v/wstunnel.svg)](https://crate.io/packages/wstunnel)	
 
 A WebSocket tunneling software written in python on top of [tornado](http://www.tornadoweb.org/) web framework for asynchronous I/O.
 
