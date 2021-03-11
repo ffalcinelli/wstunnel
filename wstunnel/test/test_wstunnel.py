@@ -47,8 +47,7 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         """
         Tests the client tunnel endpoint behaviour when there's no server counterpart
         """
-        clt_tun = WSTunnelClient(family=socket.AF_INET,
-                                 io_loop=self.io_loop)
+        clt_tun = WSTunnelClient(family=socket.AF_INET)
         clt_tun.add_proxy("test", WebSocketProxy(port=0, ws_url="ws://localhost:{0}/test".format(random_free_port())))
         clt_tun.start()
         message = "Hello World!"
@@ -67,9 +66,9 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         """
         Tests the server tunnel endpoint behaviour when there's no service to connect
         """
-        srv_tun = WSTunnelServer(0, io_loop=self.io_loop, proxies={"/test": ("127.0.0.1", random_free_port())})
+        srv_tun = WSTunnelServer(0, proxies={"/test": ("127.0.0.1", random_free_port())})
         srv_tun.start()
-        clt_tun = WSTunnelClient(io_loop=self.io_loop)
+        clt_tun = WSTunnelClient()
         clt_tun.add_proxy("test", WebSocketProxy(port=0,
                                                  ws_url="ws://localhost:{0}/test".format(srv_tun.port)))
 
@@ -90,8 +89,7 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         """
         Tests the client tunnel endpoint behaviour when there's no server counterpart
         """
-        clt_tun = WSTunnelClient(family=socket.AF_INET,
-                                 io_loop=self.io_loop)
+        clt_tun = WSTunnelClient(family=socket.AF_INET)
         clt_tun.add_proxy("test", WebSocketProxy(port=0, ws_url="ws://localhost:{0}/test".format(random_free_port())))
         clt_tun.start()
         self.assertEqual(clt_tun.ws_options, {})
@@ -114,12 +112,11 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         self.srv.start(1)
         self.srv_tun = WSTunnelServer(port=0,
                                       address=self.srv.address_list[0][0],
-                                      proxies={"/test": self.srv.address_list[0]}, io_loop=self.io_loop)
+                                      proxies={"/test": self.srv.address_list[0]})
         self.srv_tun.start()
         self.clt_tun = WSTunnelClient(proxies={0: "ws://localhost:{0}/test".format(self.srv_tun.port)},
                                       address=self.srv_tun.address,
                                       family=socket.AF_INET,
-                                      io_loop=self.io_loop,
                                       ws_options={"validate_cert": False})
         self.clt_tun.start()
 
@@ -295,7 +292,6 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
         self.srv_tun = WSTunnelServer(port=0,
                                       address=self.srv.address_list[0][0],
                                       proxies={"/test": self.srv.address_list[0]},
-                                      io_loop=self.io_loop,
                                       ssl_options={
                                           "certfile": os.path.join(fixture, "localhost.pem"),
                                           "keyfile": os.path.join(fixture, "localhost.key"),
@@ -304,7 +300,6 @@ class WSTunnelSSLTestCase(WSTunnelTestCase):
         self.clt_tun = WSTunnelClient(proxies={0: "wss://localhost:{0}/test".format(self.srv_tun.port)},
                                       address=self.srv_tun.address,
                                       family=socket.AF_INET,
-                                      io_loop=self.io_loop,
                                       ws_options={"validate_cert": False})
         self.clt_tun.start()
 

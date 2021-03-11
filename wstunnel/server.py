@@ -102,13 +102,12 @@ class WSTunnelServer(object):
     Handles several proxy services on different paths
     """
 
-    def __init__(self, port=0, address='', proxies=None, io_loop=None, ssl_options=None, **kwargs):
+    def __init__(self, port=0, address='', proxies=None, ssl_options=None, **kwargs):
         self.port = port
         self.address = address
         self.proxies = {}
 
         self.tunnel_options = {
-            "io_loop": io_loop,
             "ssl_options": ssl_options
         }
         self.app_settings = kwargs
