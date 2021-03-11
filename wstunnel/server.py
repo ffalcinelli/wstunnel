@@ -89,7 +89,7 @@ class WebSocketProxyHandler(WebSocketHandler):
         try:
             message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
-            for filtr in self.filters:
+            for filtr in reversed(self.filters):
                 data = filtr.socket_to_ws(data=data)
             if data:
                 self.write_message(data, binary=True)
