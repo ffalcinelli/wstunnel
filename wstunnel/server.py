@@ -52,6 +52,7 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from WebSocket, forward data to the service
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
@@ -86,6 +87,7 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from peer service, send back to client through WebSocket
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)

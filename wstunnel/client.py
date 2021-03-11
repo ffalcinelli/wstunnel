@@ -140,6 +140,7 @@ class WebSocketProxyConnection(object):
         On a message received from websocket, send back to client peer
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
@@ -163,6 +164,7 @@ class WebSocketProxyConnection(object):
         On data received from client peer, forward through WebSocket
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.socket_to_ws(data=data)
