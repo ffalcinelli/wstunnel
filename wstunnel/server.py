@@ -68,6 +68,8 @@ class WebSocketProxyHandler(WebSocketHandler):
         """
         logger.info("Closing connection with peer at %s" % tuple_to_address(self.remote_address))
         logger.debug("Received args %s and %s", args, kwargs)
+        for filtr in self.filters:
+            filtr.cleanup()
         #if not self.io_stream._closed:
         for message in args:
             self.on_peer_message(message)
@@ -80,6 +82,8 @@ class WebSocketProxyHandler(WebSocketHandler):
         Callback invoked on connection with mapped service
         """
         logger.info("Connection established with peer at %s" % tuple_to_address(self.remote_address))
+        for filtr in self.filters:
+            filtr.startup()
         self.io_stream.read_until_close(self.on_close, self.on_peer_message)
 
     def on_peer_message(self, message):

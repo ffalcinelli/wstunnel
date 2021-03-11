@@ -131,6 +131,8 @@ class WebSocketProxyConnection(object):
         except httpclient.HTTPError as e:
             #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
             raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
+        for filtr in self.filters:
+            filtr.startup()
         self.ws_conn.on_message = self.on_message
         self.ws_conn.release_callback = self.on_close
         self.io_stream.read_until_close(self.on_close, streaming_callback=self.on_peer_message)
@@ -156,6 +158,8 @@ class WebSocketProxyConnection(object):
         """
         logger.info("Closing connection with client at {0}:{1}".format(*self.address))
         logger.debug("Received args %s and %s", args, kwargs)
+        for filtr in self.filters:
+            filter.cleanup()
         if not self.io_stream.closed():
             self.io_stream.close()
 
