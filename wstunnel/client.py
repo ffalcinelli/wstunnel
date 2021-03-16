@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import copy
 import logging
 import socket
 from tornado import httpclient
@@ -131,8 +132,9 @@ class WebSocketProxyConnection(object):
         except httpclient.HTTPError as e:
             #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
             raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
-        for filtr in self.filters:
-            filtr.startup()
+        for k in range(len(self.filters)):
+            self.filters[k] = copy.deepcopy(self.filters[k])
+            self.filters[k].startup()
         self.ws_conn.on_message = self.on_message
         self.ws_conn.release_callback = self.on_close
         self.io_stream.read_until_close(self.on_close, streaming_callback=self.on_peer_message)

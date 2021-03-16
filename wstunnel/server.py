@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import copy
 import logging
 import socket
 from tornado.httpserver import HTTPServer
@@ -82,8 +83,9 @@ class WebSocketProxyHandler(WebSocketHandler):
         Callback invoked on connection with mapped service
         """
         logger.info("Connection established with peer at %s" % tuple_to_address(self.remote_address))
-        for filtr in self.filters:
-            filtr.startup()
+        for k in range(len(self.filters)):
+            self.filters[k] = copy.deepcopy(self.filters[k])
+            self.filters[k].startup()
         self.io_stream.read_until_close(self.on_close, self.on_peer_message)
 
     def on_peer_message(self, message):
