@@ -39,6 +39,18 @@ class BaseFilter(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def startup(self):
+        """
+        Override this method to perform filter startup tasks
+        """
+        pass
+
+    def cleanup(self):
+        """
+        Override this method to perform filter cleanup tasks
+        """
+        pass
+
     def ws_to_socket(self, data):
         """
         Override this method to perform filtering on WebSocket to Socket dataflow

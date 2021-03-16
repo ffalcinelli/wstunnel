@@ -44,8 +44,8 @@ class EchoServer(TCPServer):
     Asynchronous TCP Server echoing data back to uppercase
     """
 
-    def __init__(self, port, address='127.0.0.1', family=socket.AF_UNSPEC, backlog=128, io_loop=None, ssl_options=None):
-        super(EchoServer, self).__init__(io_loop, ssl_options)
+    def __init__(self, port, address='127.0.0.1', family=socket.AF_UNSPEC, backlog=128, ssl_options=None):
+        super(EchoServer, self).__init__(ssl_options=ssl_options)
         self.bind(port, address, family, backlog)
 
     @property

@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import copy
 import logging
 import socket
 from tornado import httpclient
@@ -131,6 +132,9 @@ class WebSocketProxyConnection(object):
         except httpclient.HTTPError as e:
             #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
             raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
+        for k in range(len(self.filters)):
+            self.filters[k] = copy.deepcopy(self.filters[k])
+            self.filters[k].startup()
         self.ws_conn.on_message = self.on_message
         self.ws_conn.release_callback = self.on_close
         self.io_stream.read_until_close(self.on_close, streaming_callback=self.on_peer_message)
@@ -140,6 +144,7 @@ class WebSocketProxyConnection(object):
         On a message received from websocket, send back to client peer
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
@@ -155,6 +160,8 @@ class WebSocketProxyConnection(object):
         """
         logger.info("Closing connection with client at {0}:{1}".format(*self.address))
         logger.debug("Received args %s and %s", args, kwargs)
+        for filtr in self.filters:
+            filter.cleanup()
         if not self.io_stream.closed():
             self.io_stream.close()
 
@@ -163,8 +170,9 @@ class WebSocketProxyConnection(object):
         On data received from client peer, forward through WebSocket
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
-            for filtr in self.filters:
+            for filtr in reversed(self.filters):
                 data = filtr.socket_to_ws(data=data)
             if data:
                 self.ws_conn.write_message(data, binary=True)

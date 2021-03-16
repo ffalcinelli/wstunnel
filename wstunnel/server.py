@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import copy
 import logging
 import socket
 from tornado.httpserver import HTTPServer
@@ -52,6 +53,7 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from WebSocket, forward data to the service
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
             for filtr in self.filters:
                 data = filtr.ws_to_socket(data=data)
@@ -67,6 +69,8 @@ class WebSocketProxyHandler(WebSocketHandler):
         """
         logger.info("Closing connection with peer at %s" % tuple_to_address(self.remote_address))
         logger.debug("Received args %s and %s", args, kwargs)
+        for filtr in self.filters:
+            filtr.cleanup()
         #if not self.io_stream._closed:
         for message in args:
             self.on_peer_message(message)
@@ -79,6 +83,9 @@ class WebSocketProxyHandler(WebSocketHandler):
         Callback invoked on connection with mapped service
         """
         logger.info("Connection established with peer at %s" % tuple_to_address(self.remote_address))
+        for k in range(len(self.filters)):
+            self.filters[k] = copy.deepcopy(self.filters[k])
+            self.filters[k].startup()
         self.io_stream.read_until_close(self.on_close, self.on_peer_message)
 
     def on_peer_message(self, message):
@@ -86,8 +93,9 @@ class WebSocketProxyHandler(WebSocketHandler):
         On message received from peer service, send back to client through WebSocket
         """
         try:
+            message = bytes(message, 'utf-8') if type(message) == str else message
             data = None if message is None else bytes(message)
-            for filtr in self.filters:
+            for filtr in reversed(self.filters):
                 data = filtr.socket_to_ws(data=data)
             if data:
                 self.write_message(data, binary=True)
@@ -102,13 +110,12 @@ class WSTunnelServer(object):
     Handles several proxy services on different paths
     """
 
-    def __init__(self, port=0, address='', proxies=None, io_loop=None, ssl_options=None, **kwargs):
+    def __init__(self, port=0, address='', proxies=None, ssl_options=None, **kwargs):
         self.port = port
         self.address = address
         self.proxies = {}
 
         self.tunnel_options = {
-            "io_loop": io_loop,
             "ssl_options": ssl_options
         }
         self.app_settings = kwargs
