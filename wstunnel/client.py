@@ -42,11 +42,13 @@ def websocket_connect(url, io_loop=None, callback=None, connect_timeout=None, **
     request = httpclient.HTTPRequest(url, connect_timeout=connect_timeout,
                                      validate_cert=kwargs.get("validate_cert", True))
     request = httpclient._RequestProxy(request, options)
-    conn = WebSocketClientConnection(io_loop, request)
+    conn = WebSocketClientConnection(request)
     if callback is not None:
         io_loop.add_future(conn.connect_future, callback)
     return conn.connect_future
 
+
+import tornado.iostream
 
 class WebSocketProxy(TCPServer):
     """
@@ -54,8 +56,7 @@ class WebSocketProxy(TCPServer):
     """
 
     def __init__(self, port, ws_url, **kwargs):
-        super(WebSocketProxy, self).__init__(kwargs.get("io_loop"),
-                                             kwargs.get("ssl_options"))
+        super(WebSocketProxy, self).__init__(ssl_options=kwargs.get("ssl_options"))
         self.bind(port,
                   kwargs.get("address", ''),
                   kwargs.get("family", socket.AF_UNSPEC),
@@ -131,9 +132,37 @@ class WebSocketProxyConnection(object):
         except httpclient.HTTPError as e:
             #TODO: change with raise EndpointNotAvailableException(message="The server endpoint is not available") from e
             raise EndpointNotAvailableException("The server endpoint is not available", cause=e)
-        self.ws_conn.on_message = self.on_message
-        self.ws_conn.release_callback = self.on_close
-        self.io_stream.read_until_close(self.on_close, streaming_callback=self.on_peer_message)
+        # self.ws_conn.on_message = self.on_message
+        # self.ws_conn.release_callback = self.on_close
+        import asyncio
+        import tornado.ioloop
+        tornado.ioloop.IOLoop.current().spawn_callback(self._read_loop)
+        tornado.ioloop.IOLoop.current().spawn_callback(self._read_ws_loop)
+
+    async def _read_ws_loop(self):
+        try:
+            while True:
+                msg = await self.ws_conn.read_message()
+                if msg is None:
+                    break
+                self.on_message(msg)
+        except Exception as e:
+            pass
+        finally:
+            self.on_close()
+
+    async def _read_loop(self):
+        import tornado.iostream
+        try:
+            while True:
+                data = await self.io_stream.read_bytes(65536, partial=True)
+                if not data:
+                    break
+                self.on_peer_message(data)
+        except tornado.iostream.StreamClosedError:
+            pass
+        finally:
+            self.on_close()
 
     def on_message(self, message):
         """
@@ -184,7 +213,6 @@ class WSTunnelClient(object):
         self.stream_options = {
             "address": address,
             "family": family,
-            "io_loop": io_loop,
             "ssl_options": ssl_options,
         }
         self.ws_options = ws_options or {}

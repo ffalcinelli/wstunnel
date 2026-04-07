@@ -1,0 +1,52 @@
+[project]
+name = "wstunnel"
+version = "0.0.6"
+description = "A Python WebSocket Tunnel"
+authors = [
+    { name = "Fabio Falcinelli", email = "fabio.falcinelli@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=3.10",
+    "tornado>=6.0",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+[project.optional-dependencies]
+windows = [
+    "pywin32>=218",
+]
+
+[project.scripts]
+wstuncltd = "wstunnel.daemon.wstuncltd:main"
+wstunsrvd = "wstunnel.daemon.wstunsrvd:main"
+wstuncltd-svc = "wstunnel.svc.wstuncltd:main"
+wstunsrvd-svc = "wstunnel.svc.wstunsrvd:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wstunnel*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+]

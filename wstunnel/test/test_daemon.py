@@ -22,7 +22,7 @@ from wstunnel.test import setup_logging, fixture, clean_logging
 __author__ = 'fabio'
 
 if not sys.platform.startswith("win"):
-    import mock
+    from unittest import mock
     import yaml
     from tornado.ioloop import IOLoop
     from wstunnel.toolbox import random_free_port
@@ -153,7 +153,7 @@ if not sys.platform.startswith("win"):
             self.log_file, self.pid_file = setup_logging()
 
             with open(os.path.join(fixture, "wstuncltd.yml")) as f:
-                self.tun_conf = yaml.load(f.read())
+                self.tun_conf = yaml.safe_load(f.read())
             self.tun_conf["logging"]["handlers"]["file_handler"]["filename"] = self.log_file
             self.tun_conf["pid_file"] = self.pid_file
             self.tun_conf["proxies"]["/test"]["port"] = random_free_port()
@@ -180,7 +180,7 @@ if not sys.platform.startswith("win"):
             self.log_file, self.pid_file = setup_logging()
 
             with open(os.path.join(fixture, "wstunsrvd.yml")) as f:
-                self.tun_conf = yaml.load(f.read())
+                self.tun_conf = yaml.safe_load(f.read())
             self.tun_conf["logging"]["handlers"]["file_handler"]["filename"] = self.log_file
             self.tun_conf["pid_file"] = self.pid_file
             self.tun_conf["listen"] = random_free_port()
@@ -206,7 +206,7 @@ if not sys.platform.startswith("win"):
             super(WSTunnelSSLClientDaemonTestCase, self).setUp()
 
             with open(os.path.join(fixture, "wstuncltd.yml")) as f:
-                self.tun_conf = yaml.load(f.read())
+                self.tun_conf = yaml.safe_load(f.read())
             self.tun_conf["logging"]["handlers"]["file_handler"]["filename"] = self.log_file
             self.tun_conf["pid_file"] = self.pid_file
             self.tun_conf["proxies"]["/test"]["port"] = random_free_port()
@@ -227,7 +227,7 @@ if not sys.platform.startswith("win"):
             super(WSTunnelSSLServerDaemonTestCase, self).setUp()
 
             with open(os.path.join(fixture, "wstunsrvd.yml")) as f:
-                self.tun_conf = yaml.load(f.read())
+                self.tun_conf = yaml.safe_load(f.read())
             self.tun_conf["logging"]["handlers"]["file_handler"]["filename"] = self.log_file
             self.tun_conf["pid_file"] = self.pid_file
             self.tun_conf["listen"] = random_free_port()

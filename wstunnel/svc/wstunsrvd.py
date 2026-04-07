@@ -66,7 +66,7 @@ class wstunsrvd(win32serviceutil.ServiceFramework):
                               servicemanager.PYS_SERVICE_STARTED,
                               (self._svc_name_, ''))
         with open(self.reg_conf["config"]) as yaml_conf:
-            self.srv = create_ws_server_endpoint(yaml.load(yaml_conf.read()))
+            self.srv = create_ws_server_endpoint(yaml.safe_load(yaml_conf.read()))
         self.srv.start()
         IOLoop.instance().start()
 

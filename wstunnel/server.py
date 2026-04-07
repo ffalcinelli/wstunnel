@@ -27,10 +27,15 @@ __author__ = 'fabio'
 logger = logging.getLogger(__name__)
 
 
+import tornado.iostream
+
 class WebSocketProxyHandler(WebSocketHandler):
     """
     Proxy a websocket connection to a service listening on a given (host, port) pair
     """
+    
+    def check_origin(self, origin):
+        return True
 
     def initialize(self, **kwargs):
         self.remote_address = kwargs.get("address")
@@ -40,12 +45,17 @@ class WebSocketProxyHandler(WebSocketHandler):
         self.filters = kwargs.get("filters", [])
         self.io_stream.set_close_callback(self.on_close)
 
-    def open(self):
+    async def open(self):
         """
         Open the connection to the service when the WebSocket connection has been established
         """
         logger.info("Forwarding connection to server %s" % tuple_to_address(self.remote_address))
-        self.io_stream.connect(self.remote_address, self.on_connect)
+        try:
+            await self.io_stream.connect(self.remote_address)
+            self.on_connect()
+        except Exception as e:
+            logger.exception(e)
+            self.on_close()
 
     def on_message(self, message):
         """
@@ -79,7 +89,22 @@ class WebSocketProxyHandler(WebSocketHandler):
         Callback invoked on connection with mapped service
         """
         logger.info("Connection established with peer at %s" % tuple_to_address(self.remote_address))
-        self.io_stream.read_until_close(self.on_close, self.on_peer_message)
+        import asyncio
+        import tornado.ioloop
+        tornado.ioloop.IOLoop.current().spawn_callback(self._read_loop)
+
+    async def _read_loop(self):
+        import tornado.iostream
+        try:
+            while True:
+                data = await self.io_stream.read_bytes(65536, partial=True)
+                if not data:
+                    break
+                self.on_peer_message(data)
+        except tornado.iostream.StreamClosedError:
+            pass
+        finally:
+            self.on_close()
 
     def on_peer_message(self, message):
         """
@@ -108,7 +133,6 @@ class WSTunnelServer(object):
         self.proxies = {}
 
         self.tunnel_options = {
-            "io_loop": io_loop,
             "ssl_options": ssl_options
         }
         self.app_settings = kwargs

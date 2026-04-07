@@ -16,7 +16,7 @@
 import socket
 from tempfile import NamedTemporaryFile
 import os
-from tornado.testing import AsyncTestCase, LogTrapTestCase
+from tornado.testing import AsyncTestCase
 from wstunnel.filters import DumpFilter, FilterException
 from wstunnel.test import EchoServer, EchoClient, RaiseFromWSFilter, RaiseToWSFilter, setup_logging, clean_logging, \
     fixture, DELETE_TMPFILE
@@ -29,7 +29,7 @@ __author__ = 'fabio'
 ASYNC_TIMEOUT = 2
 
 
-class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
+class WSEndpointsTestCase(AsyncTestCase):
     """
     TestCase for endpoints behaviour on various conditions
     """
@@ -101,7 +101,7 @@ class WSEndpointsTestCase(AsyncTestCase, LogTrapTestCase):
         clean_logging([self.log_file, self.pid_file])
 
 
-class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
+class WSTunnelTestCase(AsyncTestCase):
     """
     Tunneling thorugh WebSocket tests
     """
@@ -251,35 +251,34 @@ class WSTunnelTestCase(AsyncTestCase, LogTrapTestCase):
         """
 
         def on_close(*args):
-            raise Exception("CLOSED")
+            self.stop("CLOSED")
 
         self.client.handle_close = on_close
         self.client.send_message(self.message, handle_response=self.on_response_resend)
         self.srv.stop()
-        try:
-            self.wait(timeout=ASYNC_TIMEOUT)
-        except Exception as e:
-            self.assertEqual("CLOSED", str(e))
+        result = self.wait(timeout=ASYNC_TIMEOUT)
+        self.assertEqual("CLOSED", result)
 
     def test_server_tunnel_connection_drop(self):
         """
         Tests dropping connection server side by shutting down the WebSocket tunnel server
         """
         def on_close(*args):
-            raise Exception("CLOSED")
+            self.stop("CLOSED")
 
         self.client.handle_close = on_close
         self.client.send_message(self.message, handle_response=self.on_response_resend)
         self.srv_tun.stop()
         try:
-            self.wait(timeout=ASYNC_TIMEOUT)
-        except Exception as e:
+            result = self.wait(timeout=ASYNC_TIMEOUT)
             # Possibile cases (timing matters here):
             # 1. Connection is lost when the client already sent next message --> CLOSED since the
             # endpoint notified the client just in time.
+            self.assertEqual("CLOSED", result)
+        except Exception as e:
             # 2. Connection is lost when the client did not send the next message --> ASYNC_TIMEOUT since no endpoint
             # responding
-            self.assertTrue(str(e).lower() in ("closed", "async operation timed out after %d seconds" % ASYNC_TIMEOUT))
+            self.assertTrue("async operation timed out" in str(e).lower())
 
 
 class WSTunnelSSLTestCase(WSTunnelTestCase):

@@ -43,7 +43,7 @@ def main():
         parser.error("No configuration file found. Try using --config option.")
 
     with open(options.config, 'rt') as f:
-        conf = yaml.load(f.read())
+        conf = yaml.safe_load(f.read())
 
         if conf["endpoint"] == "client":
             wstund = WSTunnelClientDaemon(conf)

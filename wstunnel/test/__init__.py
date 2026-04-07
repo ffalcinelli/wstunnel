@@ -22,6 +22,8 @@ from tornado.tcpserver import TCPServer
 from wstunnel.filters import BaseFilter, FilterException
 
 
+import tornado.iostream
+
 class EchoHandler(object):
     """
     Echo handler. Data is echoed back to uppercase
@@ -29,14 +31,19 @@ class EchoHandler(object):
 
     def __init__(self, io_stream):
         self.io_stream = io_stream
+        import asyncio
+        import tornado.ioloop
+        tornado.ioloop.IOLoop.current().spawn_callback(self._read_loop)
 
-        def closing_cb(data):
+    async def _read_loop(self):
+        try:
+            while True:
+                data = await self.io_stream.read_bytes(65536, partial=True)
+                if not data:
+                    break
+                self.io_stream.write(data.upper())
+        except tornado.iostream.StreamClosedError:
             pass
-
-        def sending_cb(data):
-            self.io_stream.write(data.upper())
-
-        self.io_stream.read_until_close(closing_cb, streaming_callback=sending_cb)
 
 
 class EchoServer(TCPServer):
@@ -45,7 +52,7 @@ class EchoServer(TCPServer):
     """
 
     def __init__(self, port, address='127.0.0.1', family=socket.AF_UNSPEC, backlog=128, io_loop=None, ssl_options=None):
-        super(EchoServer, self).__init__(io_loop, ssl_options)
+        super(EchoServer, self).__init__(ssl_options=ssl_options)
         self.bind(port, address, family, backlog)
 
     @property
@@ -66,15 +73,28 @@ class EchoClient(object):
         self.address = address
         self.is_closed = False
 
-    def handle_close(self, data):
+    def handle_close(self, data=None):
         self.is_closed = True
 
     def send_message(self, message, handle_response):
-        def handle_connect():
-            self.io_stream.read_until_close(self.handle_close, handle_response)
+        import asyncio
+        async def _connect_and_read():
+            import tornado.iostream
+            await self.io_stream.connect(self.address)
             self.write(message)
-
-        self.io_stream.connect(self.address, handle_connect)
+            try:
+                while True:
+                    data = await self.io_stream.read_bytes(65536, partial=True)
+                    if not data:
+                        break
+                    handle_response(data)
+            except tornado.iostream.StreamClosedError:
+                pass
+            finally:
+                self.handle_close()
+        
+        import tornado.ioloop
+        tornado.ioloop.IOLoop.current().spawn_callback(_connect_and_read)
 
     def write(self, message):
         if not isinstance(message, bytes):

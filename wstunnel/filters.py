@@ -88,7 +88,7 @@ class DumpFilter(BaseFilter):
 
         if conf_file:
             with open(conf_file, "rt") as yml:
-                conf = yaml.load(yml)
+                conf = yaml.safe_load(yml)
         else:
             conf = copy.copy(self.default_conf)
             if handler:
